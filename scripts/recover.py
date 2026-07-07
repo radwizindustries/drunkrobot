@@ -16,7 +16,7 @@ from datetime import datetime
 from pathlib import Path
 
 SITE = "drunk-robot.com"
-CDX_API = "http://web.archive.org/cdx/search/cdx"
+CDX_API = "https://web.archive.org/cdx/search/cdx"
 USER_AGENT = "drunk-robot-recovery/1.0 (site owner restoring own content)"
 CUTOFF = "20170101000000"  # site died ~2017; later captures are domain parking
 
@@ -35,21 +35,31 @@ NON_POST_SEGMENTS = {
 ASSET_EXTENSIONS = (".jpg", ".jpeg", ".gif", ".png", ".css", ".js", ".ico",
                     ".xml", ".txt", ".php")
 
+THROTTLE_SECONDS = 2.5
+FETCH_RETRIES = 5
 _last_request = 0.0
 
 
 def _throttle():
     global _last_request
-    wait = _last_request + 1.0 - time.monotonic()
+    wait = _last_request + THROTTLE_SECONDS - time.monotonic()
     if wait > 0:
         time.sleep(wait)
     _last_request = time.monotonic()
 
 
 def fetch(url: str) -> bytes:
-    """GET with 1 req/s throttle, 3 retries with backoff, 30s timeout."""
+    """GET with a throttled request rate, retries with backoff, 30s timeout.
+
+    archive.org intermittently refuses connections under sustained request
+    volume (observed empirically during recovery: isolated test bursts of
+    5-10 requests always succeed, but a full ~150-250 request crawl trips
+    something -- likely a rate limiter -- that returns ECONNREFUSED rather
+    than an HTTP 429). More retries with longer backoff give that window a
+    chance to clear rather than abandoning an otherwise-recoverable page.
+    """
     last_error = None
-    for attempt in range(3):
+    for attempt in range(FETCH_RETRIES):
         _throttle()
         try:
             req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
@@ -57,7 +67,7 @@ def fetch(url: str) -> bytes:
                 return resp.read()
         except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError) as e:
             last_error = e
-            time.sleep(2 ** (attempt + 1))
+            time.sleep(min(2 ** (attempt + 1), 30))
     raise last_error
 
 
@@ -220,5 +230,237 @@ def parse_site_feed(xml_text: str) -> list:
     return items
 
 
+def crawl(seed_paths: set, snapshots: dict, fetch_page) -> tuple:
+    """BFS from seed post paths, following navi links to undiscovered posts.
+
+    snapshots: {path: cdx_rows}. fetch_page(path, ts) -> parsed post dict.
+    Returns ({path: parsed}, [skipped_paths]).
+    """
+    queue = sorted(seed_paths)
+    seen, results, skipped = set(queue), {}, []
+    while queue:
+        path = queue.pop(0)
+        ts = best_snapshot(snapshots.get(path, []))
+        if ts is None:
+            skipped.append(path)
+            continue
+        try:
+            parsed = fetch_page(path, ts)
+        except Exception as e:
+            print(f"  fetch failed, skipping {path}: {e}")
+            skipped.append(path)
+            continue
+        results[path] = parsed
+        for nav_path in parsed.get("nav_paths", []):
+            if nav_path not in seen and classify(nav_path) in ("post-slug", "post-dated"):
+                seen.add(nav_path)
+                queue.append(nav_path)
+    return results, skipped
+
+
+def _slug_of(path: str) -> str:
+    return path.strip("/").split("/")[-1].lower()
+
+
+def build_records(pages: dict, feed_items: list) -> tuple:
+    """Merge crawled pages and feed items into comic records + problem list."""
+    by_slug, problems = {}, []
+
+    def offer(slug, title, date, image_url, body, source):
+        if not (title and date and image_url):
+            return False
+        image = urllib.parse.unquote(image_url.rsplit("/", 1)[-1])
+        existing = by_slug.get(slug)
+        record = {"slug": slug, "title": title, "date": date,
+                  "image": image, "body": body or "", "source": source}
+        # prefer records with a body; then prefer the later source (slug era)
+        if existing is None or (not existing["body"] and body):
+            by_slug[slug] = record
+        return True
+
+    for path, parsed in sorted(pages.items()):
+        if parsed is None:
+            continue
+        images = parsed.get("image_urls", [])
+        if len(images) > 1:
+            problems.append({"path": path, "reason": "multiple comic images",
+                             "details": f"using first of {len(images)}: {images}"})
+        ok = offer(_slug_of(path), parsed.get("title"), parsed.get("date"),
+                   images[0] if images else None, parsed.get("body"),
+                   f"https://web.archive.org/web/*/{SITE}{path}")
+        if not ok:
+            problems.append({"path": path, "reason": "incomplete extraction",
+                             "details": f"title={parsed.get('title')!r} date={parsed.get('date')!r} "
+                                        f"images={len(images)}"})
+
+    for item in feed_items:
+        if not item.get("path"):
+            continue
+        slug = _slug_of(item["path"])
+        if slug in by_slug:
+            continue
+        imgs = re.findall(r'<img src="(https?://(?:www\.)?drunk-robot\.com/comics/[^"]+)"',
+                          item.get("body") or "")
+        ok = offer(slug, item.get("title"), item.get("date"),
+                   imgs[0] if imgs else None, "",
+                   f"https://web.archive.org/web/*/{SITE}/feed/")
+        if not ok:
+            problems.append({"path": item["path"], "reason": "feed item incomplete",
+                             "details": f"title={item.get('title')!r} date={item.get('date')!r}"})
+
+    records = sorted(by_slug.values(), key=lambda r: (r["date"], r["slug"]))
+    return records, problems
+
+
+def download_image(image_url: str, dest_dir: Path) -> bool:
+    """Download the largest 200 capture of an image. Returns success."""
+    basename = urllib.parse.unquote(image_url.rsplit("/", 1)[-1])
+    dest = dest_dir / basename
+    if dest.exists():
+        return True
+    rows = cdx_rows(image_url)
+    ok = [r for r in rows if r[4] == "200"]
+    if not ok:
+        return False
+    best = max(ok, key=lambda r: int(r[6]))
+    data = fetch(f"https://web.archive.org/web/{best[1]}im_/{image_url}")
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    dest.write_bytes(data)
+    return True
+
+
+def main():
+    print("Pass 1: CDX discovery")
+    rows = cdx_rows(f"{SITE}*")
+    snapshots = {}
+    for row in rows:
+        path = normalize_url(row[2])
+        snapshots.setdefault(path, []).append(row)
+
+    seeds, p_ids, feed_paths, listing_paths = set(), [], [], []
+    for path in snapshots:
+        kind = classify(path)
+        if kind in ("post-slug", "post-dated"):
+            seeds.add(path)
+        elif kind == "p-id":
+            p_ids.append(path)
+        elif kind == "feed":
+            feed_paths.append(path)
+        elif kind == "listing":
+            listing_paths.append(path)
+    print(f"  {len(seeds)} seed posts, {len(p_ids)} ?p= ids, "
+          f"{len(feed_paths)} feeds, {len(listing_paths)} listing pages")
+
+    print("Pass 1b: resolve ?p= ids via wayback redirects")
+    for path in p_ids:
+        rows_p = snapshots.get(path, [])
+        ts = best_snapshot(rows_p)  # ?p= captures are usually 301s, so fall back
+        if ts is None:
+            all_ts = sorted(r[1] for r in rows_p)
+            ts = all_ts[-1] if all_ts else None
+        if not ts:
+            continue
+        try:
+            req = urllib.request.Request(
+                f"https://web.archive.org/web/{ts}/http://{SITE}{path}",
+                headers={"User-Agent": USER_AGENT})
+            _throttle()
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                final = resp.geturl()
+            m = re.search(r"/web/\d+/https?://(?:www\.)?" + re.escape(SITE) + r"(/.*)$", final)
+            if m:
+                resolved = normalize_url("http://" + SITE + m.group(1))
+                if classify(resolved) in ("post-slug", "post-dated"):
+                    seeds.add(resolved)
+                    print(f"  {path} -> {resolved}")
+        except Exception as e:
+            print(f"  {path}: unresolved ({e})")
+
+    print("Pass 1c: mine listing pages for post links")
+    for path in listing_paths:
+        ts = best_snapshot(snapshots.get(path, []))
+        if not ts:
+            continue
+        try:
+            html_text = fetch_cached(
+                f"https://web.archive.org/web/{ts}id_/http://{SITE}{path}").decode("utf-8", "replace")
+        except Exception as e:
+            print(f"  listing page fetch failed, skipping {path}: {e}")
+            continue
+        for href in re.findall(
+                r'<a href="(https?://(?:www\.)?' + re.escape(SITE) + r'/[^"]*)"', html_text):
+            p = normalize_url(href)
+            if classify(p) in ("post-slug", "post-dated"):
+                seeds.add(p)
+
+    print(f"Pass 2: crawl {len(seeds)} candidate posts")
+
+    def fetch_page(path, ts):
+        raw = fetch_cached(
+            f"https://web.archive.org/web/{ts}id_/http://{SITE}{path}").decode("utf-8", "replace")
+        return parse_post(raw)
+
+    pages, skipped = crawl(seeds, snapshots, fetch_page)
+
+    print("Pass 2b: parse feeds for gap-filling")
+    feed_items = []
+    for path in feed_paths:
+        ts = best_snapshot(snapshots.get(path, []))
+        if not ts:
+            continue
+        try:
+            xml_text = fetch_cached(
+                f"https://web.archive.org/web/{ts}id_/http://{SITE}{path}").decode("utf-8", "replace")
+        except Exception as e:
+            print(f"  feed fetch failed, skipping {path}: {e}")
+            continue
+        if "<item>" in xml_text:
+            feed_items.extend(parse_site_feed(xml_text))
+        else:
+            info = parse_comment_feed(xml_text)
+            if info["path"] and info["title"]:
+                feed_items.append({"title": info["title"], "path": info["path"],
+                                   "date": None, "body": ""})
+
+    print("Pass 3: build records")
+    records, problems = build_records(pages, feed_items)
+
+    print(f"Pass 3b: download {len(records)} images")
+    img_dir = REPO_ROOT / "public" / "comics"
+    kept = []
+    for rec in records:
+        url = f"http://{SITE}/comics/" + urllib.parse.quote(rec["image"])
+        try:
+            ok = download_image(url, img_dir)
+        except Exception as e:
+            print(f"  image fetch failed for {rec['slug']}: {e}")
+            ok = False
+        if ok:
+            kept.append(rec)
+        else:
+            problems.append({"path": f"/comics/{rec['image']}",
+                             "reason": "image unrecoverable",
+                             "details": f"no usable capture for {rec['slug']}"})
+
+    print("Pass 4: write outputs")
+    out = REPO_ROOT / "src" / "data" / "comics.json"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(kept, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+
+    report = ["# Drunk Robot Recovery Report", "",
+              f"- Recovered comics: **{len(kept)}**",
+              f"- Skipped (no usable snapshot): **{len(skipped)}**",
+              f"- Problems for review: **{len(problems)}**", "",
+              "## Recovered", "", "| Date | Slug | Title | Image |", "|---|---|---|---|"]
+    for r in kept:
+        report.append(f"| {r['date']} | {r['slug']} | {r['title']} | {r['image']} |")
+    report += ["", "## Skipped paths", ""]
+    report += [f"- `{p}`" for p in skipped] or ["- none"]
+    report += ["", "## Problems", ""]
+    report += [f"- `{p['path']}`: {p['reason']} ({p['details']})" for p in problems] or ["- none"]
+    (REPO_ROOT / "recovery-report.md").write_text("\n".join(report) + "\n", encoding="utf-8")
+    print(f"Done: {len(kept)} comics -> {out}")
+
+
 if __name__ == "__main__":
-    print("Run via main() added in Task 3.")
+    main()

@@ -166,5 +166,69 @@ class TestParseFeeds(unittest.TestCase):
         self.assertEqual(first["path"], "/2011/05/23/cosplay-faux-pas/")
 
 
+def _mk_post(title, date, image, nav=()):
+    return {"title": title, "date": date,
+            "image_urls": [f"http://drunk-robot.com/comics/{image}"] if image else [],
+            "body": "<p>hi</p>", "nav_paths": list(nav), "shortlink_id": None}
+
+
+class TestCrawl(unittest.TestCase):
+    def test_follows_nav_links_to_undiscovered_posts(self):
+        pages = {
+            "/a/": _mk_post("A", "2011-01-03", "2011-01-03.jpg", nav=["/b/"]),
+            "/b/": _mk_post("B", "2011-01-10", "2011-01-10.jpg", nav=["/a/"]),
+        }
+        snapshots = {p: [["k", "20130101000000", f"http://drunk-robot.com{p}", "text/html", "200", "D", "1"]]
+                     for p in pages}
+        result, skipped = recover.crawl({"/a/"}, snapshots, lambda path, ts: pages[path])
+        self.assertEqual(set(result), {"/a/", "/b/"})
+        self.assertEqual(skipped, [])
+
+    def test_skips_paths_without_200_snapshot(self):
+        pages = {"/a/": _mk_post("A", "2011-01-03", "2011-01-03.jpg", nav=["/gone/"])}
+        snapshots = {"/a/": [["k", "20130101000000", "u", "text/html", "200", "D", "1"]]}
+        result, skipped = recover.crawl({"/a/"}, snapshots, lambda path, ts: pages[path])
+        self.assertEqual(set(result), {"/a/"})
+        self.assertEqual(skipped, ["/gone/"])
+
+    def test_fetch_failure_is_skipped_not_fatal(self):
+        def failing_fetch(path, ts):
+            raise OSError("network down")
+        snapshots = {"/a/": [["k", "20130101000000", "u", "text/html", "200", "D", "1"]]}
+        result, skipped = recover.crawl({"/a/"}, snapshots, failing_fetch)
+        self.assertEqual(result, {})
+        self.assertEqual(skipped, ["/a/"])
+
+
+class TestBuildRecords(unittest.TestCase):
+    def test_dedupes_dated_and_slug_eras_by_slug(self):
+        pages = {
+            "/2011/05/23/cosplay-faux-pas/": _mk_post("Cosplay Faux Pas", "2011-05-23", "2011-05-23.gif"),
+            "/cosplay-faux-pas/": _mk_post("Cosplay Faux Pas", "2011-05-23", "2011-05-23.gif"),
+        }
+        records, problems = recover.build_records(pages, [])
+        self.assertEqual(len(records), 1)
+        self.assertEqual(records[0]["slug"], "cosplay-faux-pas")
+
+    def test_incomplete_post_becomes_problem(self):
+        pages = {"/mystery/": _mk_post("Mystery", None, None)}
+        records, problems = recover.build_records(pages, [])
+        self.assertEqual(records, [])
+        self.assertEqual(problems[0]["path"], "/mystery/")
+
+    def test_feed_item_fills_gap(self):
+        items = [{"title": "Ghost Post", "path": "/ghost-post/", "date": "2012-01-02",
+                  "body": '<img src="http://drunk-robot.com/comics/2012-01-02.jpg">'}]
+        records, problems = recover.build_records({}, items)
+        self.assertEqual(records[0]["slug"], "ghost-post")
+        self.assertEqual(records[0]["image"], "2012-01-02.jpg")
+
+    def test_image_basename_is_url_decoded(self):
+        pages = {"/dance-of-madness/": _mk_post(
+            "Dance Of Madness", "2011-06-20", "2011-06-20-Dance%20of%20Madness.jpg")}
+        records, _ = recover.build_records(pages, [])
+        self.assertEqual(records[0]["image"], "2011-06-20-Dance of Madness.jpg")
+
+
 if __name__ == "__main__":
     unittest.main()
