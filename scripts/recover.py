@@ -5,12 +5,14 @@ Writes ../src/data/comics.json, ../public/comics/*, ../recovery-report.md.
 Python 3 stdlib only. See docs/superpowers/specs/2026-07-06-drunk-robot-relaunch-design.md.
 """
 
+import html as html_mod
 import json
 import re
 import time
 import urllib.error
 import urllib.parse
 import urllib.request
+from datetime import datetime
 from pathlib import Path
 
 SITE = "drunk-robot.com"
@@ -124,6 +126,98 @@ def best_snapshot(rows: list) -> str | None:
         return None
     pre_cutoff = [ts for ts in ok if ts < CUTOFF]
     return (pre_cutoff or ok)[-1]
+
+
+MONTHS = {m: i for i, m in enumerate(
+    ["January", "February", "March", "April", "May", "June", "July",
+     "August", "September", "October", "November", "December"], start=1)}
+
+
+def _parse_display_date(text: str) -> str | None:
+    """'May 23, 2011' -> '2011-05-23'."""
+    m = re.match(r"^(\w+) (\d{1,2}), (\d{4})$", text.strip())
+    if not m or m.group(1) not in MONTHS:
+        return None
+    return f"{int(m.group(3)):04d}-{MONTHS[m.group(1)]:02d}-{int(m.group(2)):02d}"
+
+
+def parse_post(html_text: str) -> dict:
+    """Extract comic data from a ComicPress post page (id_ raw HTML)."""
+    result = {"title": None, "date": None, "image_urls": [],
+              "body": "", "nav_paths": [], "shortlink_id": None}
+
+    m = re.search(r'<h2 class="post-title"><a [^>]*>(.*?)</a></h2>', html_text, re.S)
+    if m:
+        result["title"] = html_mod.unescape(m.group(1)).strip()
+
+    m = re.search(r'<span class="post-date">(.*?)</span>', html_text, re.S)
+    if m:
+        result["date"] = _parse_display_date(html_mod.unescape(m.group(1)))
+
+    comic_zone = html_text
+    m = re.search(r'<div id="comic">(.*?)<div id="comic-foot', html_text, re.S)
+    if m:
+        comic_zone = m.group(1)
+    result["image_urls"] = re.findall(
+        r'<img src="(https?://(?:www\.)?drunk-robot\.com/comics/[^"]+)"', comic_zone)
+
+    result["nav_paths"] = [
+        normalize_url(href) for href in
+        re.findall(r'<a href="([^"]+)" class="navi[^"]*"', html_text)
+    ]
+
+    m = re.search(r"<link rel=['\"]shortlink['\"] href=['\"][^'\"]*\?p=(\d+)['\"]", html_text)
+    if m:
+        result["shortlink_id"] = int(m.group(1))
+
+    m = re.search(r'<div class="entry">(.*?)<div class="post-foot', html_text, re.S)
+    if m:
+        body = m.group(1)
+        body = re.sub(r"<!-- Facebook Comments.*$", "", body, flags=re.S)
+        body = re.sub(r'<div class="fb-comments".*$', "", body, flags=re.S)
+        body = re.sub(r"<script\b.*?</script>", "", body, flags=re.S)
+        body = re.sub(r"<p>(&nbsp;|\s)*</p>", "", body)
+        # drop dangling close-tags left by the fb-comments cut
+        body = re.sub(r"(</div>\s*)+$", "", body.strip())
+        result["body"] = body.strip()
+
+    return result
+
+
+def parse_comment_feed(xml_text: str) -> dict:
+    """A per-post comment feed names its post: 'Comments on: TITLE' + <link>."""
+    result = {"title": None, "path": None}
+    m = re.search(r"<title>Comments on: (.*?)</title>", xml_text, re.S)
+    if m:
+        result["title"] = html_mod.unescape(m.group(1)).strip()
+    m = re.search(r"<link>(https?://[^<]+)</link>", xml_text)
+    if m:
+        result["path"] = normalize_url(m.group(1))
+    return result
+
+
+def parse_site_feed(xml_text: str) -> list:
+    """The site RSS feed carries full posts: title, link, pubDate, content."""
+    items = []
+    for chunk in re.findall(r"<item>(.*?)</item>", xml_text, re.S):
+        title = re.search(r"<title>(.*?)</title>", chunk, re.S)
+        link = re.search(r"<link>(https?://[^<]+)</link>", chunk)
+        pub = re.search(r"<pubDate>(.*?)</pubDate>", chunk)
+        content = re.search(r"<content:encoded><!\[CDATA\[(.*?)\]\]></content:encoded>", chunk, re.S)
+        date = None
+        if pub:
+            try:
+                date = datetime.strptime(
+                    pub.group(1).strip(), "%a, %d %b %Y %H:%M:%S %z").strftime("%Y-%m-%d")
+            except ValueError:
+                pass
+        items.append({
+            "title": html_mod.unescape(title.group(1)).strip() if title else None,
+            "path": normalize_url(link.group(1)) if link else None,
+            "date": date,
+            "body": content.group(1).strip() if content else "",
+        })
+    return items
 
 
 if __name__ == "__main__":

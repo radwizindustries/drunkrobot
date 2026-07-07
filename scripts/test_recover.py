@@ -106,5 +106,65 @@ class TestCdxFixture(unittest.TestCase):
             self.assertGreater(len(posts), 40)
 
 
+class TestParsePost(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.slug_html = (FIXTURES / "post_slug.html").read_text(encoding="utf-8", errors="replace")
+        cls.dated_html = (FIXTURES / "post_dated.html").read_text(encoding="utf-8", errors="replace")
+
+    def test_title(self):
+        self.assertEqual(recover.parse_post(self.slug_html)["title"], "Cosplay Faux Pas")
+        self.assertEqual(recover.parse_post(self.dated_html)["title"], "Dance Of Madness")
+
+    def test_date(self):
+        self.assertEqual(recover.parse_post(self.slug_html)["date"], "2011-05-23")
+        self.assertEqual(recover.parse_post(self.dated_html)["date"], "2011-06-20")
+
+    def test_image_urls(self):
+        self.assertEqual(
+            recover.parse_post(self.slug_html)["image_urls"],
+            ["http://drunk-robot.com/comics/2011-05-23.gif"],
+        )
+        self.assertEqual(
+            recover.parse_post(self.dated_html)["image_urls"],
+            ["http://drunk-robot.com/comics/2011-06-20-Dance%20of%20Madness.jpg"],
+        )
+
+    def test_nav_paths(self):
+        nav = recover.parse_post(self.dated_html)["nav_paths"]
+        self.assertIn("/2011/06/12/green-lantern-is-a-jerk/", nav)
+        self.assertIn("/2011/06/27/last-call-fuzzballs/", nav)
+        nav2 = recover.parse_post(self.slug_html)["nav_paths"]
+        self.assertIn("/grumpy-timelord/", nav2)
+
+    def test_body_cleaned(self):
+        body = recover.parse_post(self.slug_html)["body"]
+        self.assertIn("Sideways8studios.com", body)
+        self.assertNotIn("fb-comments", body)
+        self.assertNotIn("<script", body)
+        self.assertNotIn("web.archive.org", body)
+
+    def test_shortlink_id(self):
+        self.assertEqual(recover.parse_post(self.slug_html)["shortlink_id"], 7)
+
+
+class TestParseFeeds(unittest.TestCase):
+    def test_comment_feed_gives_title_and_path(self):
+        xml = (FIXTURES / "comment_feed.xml").read_text(encoding="utf-8", errors="replace")
+        result = recover.parse_comment_feed(xml)
+        self.assertEqual(result["title"], "05/14/2006")
+        self.assertEqual(result["path"], "/05142006/")
+
+    def test_site_feed_items(self):
+        xml = (FIXTURES / "site_feed.xml").read_text(encoding="utf-8", errors="replace")
+        items = recover.parse_site_feed(xml)
+        self.assertGreaterEqual(len(items), 5)
+        titles = [i["title"] for i in items]
+        self.assertIn("Cosplay Faux Pas", titles)
+        first = next(i for i in items if i["title"] == "Cosplay Faux Pas")
+        self.assertEqual(first["date"], "2011-05-23")
+        self.assertEqual(first["path"], "/2011/05/23/cosplay-faux-pas/")
+
+
 if __name__ == "__main__":
     unittest.main()
