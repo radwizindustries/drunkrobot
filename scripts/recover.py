@@ -35,6 +35,15 @@ NON_POST_SEGMENTS = {
 ASSET_EXTENSIONS = (".jpg", ".jpeg", ".gif", ".png", ".css", ".js", ".ico",
                     ".xml", ".txt", ".php")
 
+# Spec originally called for 1.0s / 3 retries. Raised after observing
+# ECONNREFUSED under sustained crawl volume that isolated test bursts (5-10
+# requests) never reproduced -- consistent with rate limiting, but NOT
+# independently re-verified against the original 1.0s/3 setting on a repeat
+# run, so treat "rate limiting" as the leading hypothesis, not a proven
+# cause. These values are strictly more conservative than the original
+# (slower, more patient), never more aggressive, so the downside of being
+# wrong about the cause is negligible -- worst case, re-runs are unnecessarily
+# slow, not unnecessarily aggressive toward archive.org.
 THROTTLE_SECONDS = 2.5
 FETCH_RETRIES = 5
 _last_request = 0.0

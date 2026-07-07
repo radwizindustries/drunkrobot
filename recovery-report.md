@@ -82,3 +82,30 @@
 - `/comics/2012-06-25.jpg`: image unrecoverable (no usable capture for laugh-avengers-thor)
 - `/comics/2012-07-02.jpg`: image unrecoverable (no usable capture for spider-bong)
 - `/comics/2012-07-09.jpg`: image unrecoverable (no usable capture for super-diapers)
+
+## Why only 7: verified Wayback coverage ceiling
+
+The 40 `image unrecoverable` entries above are not fetch failures. They are
+posts the crawler successfully read (title, date, body all extracted) whose
+comic image was never captured by the Internet Archive at all. Verified
+2026-07-07 with an exhaustive CDX sweep across the entire domain (not just
+`/comics/`), run directly against the live API:
+
+    curl -s "https://web.archive.org/cdx/search/cdx?url=drunk-robot.com*&output=json&filter=mimetype:image.*&collapse=urlkey"
+
+This returned 33 rows total for the whole site. Excluding theme/UI icons
+(nav buttons, favicon, background image) and 3 duplicate `/comics-mini/`
+thumbnails, exactly **8 real comic strip images** exist anywhere in the
+Wayback Machine for drunk-robot.com:
+
+    2011-05-23.gif   2012-07-30.jpg   2014-07-07.jpg   2015-09-30.jpg
+    2011-12-19.jpg   2013-04-01.jpg   2015-09-23.jpg
+
+    (2014-06-05.jpg is also archived but its post page was not among the
+    58 candidates this crawl discovered, so it has no matching record.)
+
+7 of those 8 matched a successfully-crawled post and are the 7 comics in
+this report. This is a permanent gap in what Internet Archive's crawler
+captured (it indexed the WordPress post text far more thoroughly than the
+embedded images), not a bug in `recover.py` and not fixable by retrying.
+Reviewed and accepted by the site owner at the recovery checkpoint.

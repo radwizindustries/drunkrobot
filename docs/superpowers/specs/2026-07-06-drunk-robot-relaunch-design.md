@@ -9,7 +9,7 @@ Resurrect drunk-robot.com, a webcomic site that ran on WordPress + ComicPress fr
 
 ## Decisions Made
 
-- **Recovery scope:** best-effort recovery of all comics. Accept that some may be unrecoverable if Wayback never captured them.
+- **Recovery scope:** best-effort recovery of all comics. Accept that some may be unrecoverable if Wayback never captured them. **Actual result (2026-07-07):** 7 comics recovered. Verified via exhaustive CDX sweep that archive.org captured only 8 comic images total for the domain's entire 2011-2016 run (crawler indexed post text far more thoroughly than embedded media) -- a permanent data ceiling, not a bug. Reviewed and accepted by the site owner at the recovery checkpoint; see `recovery-report.md` for the evidence.
 - **Sub-strips** (`chuck-hero`, `reboot`, `bing`, `space-time-improbability`, `total-recall-reboot`, etc.): ordinary comic posts, same treatment as everything else, one unified archive.
 - **Legacy features:** dropped. No comments, no RSS, no share buttons, no buy-print. Clean archive plus an about page.
 - **Visual direction:** Panel Noir: bold, high-contrast, near-black background, signature red comic-gutter framing, condensed display type.
