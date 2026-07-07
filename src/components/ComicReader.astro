@@ -1,0 +1,98 @@
+---
+import type { Comic, ComicNav } from '../lib/comicNav';
+
+interface Props {
+  comic: Comic;
+  nav: ComicNav;
+  allSlugs: string[];
+}
+
+const { comic, nav, allSlugs } = Astro.props;
+const displayDate = new Date(comic.date + 'T00:00:00').toLocaleDateString('en-US', {
+  year: 'numeric', month: 'long', day: 'numeric',
+});
+---
+
+<article class="reader">
+  <div class="meta">
+    <span>#{String(nav.index + 1).padStart(3, '0')} of {nav.total}</span>
+    <time datetime={comic.date}>{displayDate}</time>
+  </div>
+  <h1 class="display">{comic.title}</h1>
+  <div class="frame">
+    <img src={`/comics/${comic.image}`} alt={comic.title} loading="eager" />
+  </div>
+  <nav class="reader-nav" aria-label="Comic navigation">
+    {nav.prev
+      ? <a class="display" href={`/comic/${nav.first.slug}/`}>&#171; First</a>
+      : <span class="display disabled">&#171; First</span>}
+    {nav.prev
+      ? <a class="display" href={`/comic/${nav.prev.slug}/`}>&#8249; Prev</a>
+      : <span class="display disabled">&#8249; Prev</span>}
+    <button class="display" id="random-btn" type="button">Random</button>
+    {nav.next
+      ? <a class="display" href={`/comic/${nav.next.slug}/`}>Next &#8250;</a>
+      : <span class="display disabled">Next &#8250;</span>}
+    {nav.next
+      ? <a class="display" href={`/comic/${nav.last.slug}/`}>Last &#187;</a>
+      : <span class="display disabled">Last &#187;</span>}
+  </nav>
+  {comic.body && <div class="commentary" set:html={comic.body} />}
+</article>
+
+<script is:inline define:vars={{ allSlugs }}>
+  document.getElementById('random-btn').addEventListener('click', () => {
+    const slug = allSlugs[Math.floor(Math.random() * allSlugs.length)];
+    window.location.href = `/comic/${slug}/`;
+  });
+</script>
+
+<style>
+  .meta {
+    display: flex;
+    justify-content: space-between;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-size: 0.75rem;
+    margin-top: 1.5rem;
+  }
+  h1 { font-size: 1.6rem; margin: 0.25rem 0 1rem; }
+  .reader-nav {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin: 1.25rem 0;
+    flex-wrap: wrap;
+  }
+  .reader-nav a, .reader-nav button, .reader-nav .disabled {
+    background: var(--panel);
+    color: var(--text);
+    text-decoration: none;
+    padding: 0.6rem 1.1rem;
+    font-size: 0.85rem;
+    border: none;
+    cursor: pointer;
+  }
+  .reader-nav a:hover, .reader-nav button:hover { background: var(--red); }
+  .reader-nav button { background: var(--red); }
+  .reader-nav .disabled { color: #555; cursor: default; }
+  .commentary {
+    border-left: 3px solid var(--red);
+    padding-left: 1rem;
+    color: var(--muted);
+    font-size: 0.95rem;
+  }
+  @media (max-width: 640px) {
+    .reader-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      margin: 0;
+      background: var(--bg);
+      border-top: 2px solid var(--red);
+      padding: 0.5rem;
+    }
+  }
+</style>

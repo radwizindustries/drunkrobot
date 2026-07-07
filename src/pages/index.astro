@@ -1,4 +1,16 @@
 ---
+import { getCollection } from 'astro:content';
+import ComicReader from '../components/ComicReader.astro';
 import Base from '../layouts/Base.astro';
+import { getNav, sortByDate } from '../lib/comicNav';
+
+const entries = await getCollection('comics');
+const comics = sortByDate(entries.map((e) => e.data));
+const latest = comics[comics.length - 1];
+const nav = getNav(comics, latest.slug);
+const allSlugs = comics.map((c) => c.slug);
 ---
-<Base title="Drunk Robot"><p>Placeholder, replaced in Task 6.</p></Base>
+
+<Base title={`Drunk Robot - ${latest.title}`}>
+  <ComicReader comic={latest} nav={nav} allSlugs={allSlugs} />
+</Base>

@@ -1,0 +1,22 @@
+---
+import { getCollection } from 'astro:content';
+import ComicReader from '../../components/ComicReader.astro';
+import Base from '../../layouts/Base.astro';
+import { getNav, sortByDate } from '../../lib/comicNav';
+
+export async function getStaticPaths() {
+  const entries = await getCollection('comics');
+  return entries.map((e) => ({ params: { slug: e.data.slug } }));
+}
+
+const { slug } = Astro.params;
+const entries = await getCollection('comics');
+const comics = sortByDate(entries.map((e) => e.data));
+const comic = comics.find((c) => c.slug === slug)!;
+const nav = getNav(comics, comic.slug);
+const allSlugs = comics.map((c) => c.slug);
+---
+
+<Base title={`Drunk Robot - ${comic.title}`}>
+  <ComicReader comic={comic} nav={nav} allSlugs={allSlugs} />
+</Base>
