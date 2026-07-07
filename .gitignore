@@ -5,3 +5,4 @@ dist/
 scripts/.cache/
 scripts/recovery-run.log
 scripts/__pycache__/
+.astro/
