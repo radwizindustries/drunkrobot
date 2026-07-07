@@ -17,6 +17,28 @@ const nav = getNav(comics, comic.slug);
 const allSlugs = comics.map((c) => c.slug);
 ---
 
-<Base title={`Drunk Robot - ${comic.title}`}>
+<Base
+  title={`Drunk Robot - ${comic.title}`}
+  description={`"${comic.title}" - a Drunk Robot strip from ${comic.date}.`}
+  image={`/comics/${comic.image}`}
+  type="article"
+  structuredData={{
+    '@context': 'https://schema.org',
+    '@type': 'CreativeWork',
+    name: comic.title,
+    datePublished: comic.date,
+    image: new URL(`/comics/${comic.image}`, Astro.site).toString(),
+    url: Astro.url.toString(),
+    author: [
+      { '@type': 'Person', name: 'Brian Powell' },
+      { '@type': 'Person', name: 'Jeff Pina' },
+    ],
+    isPartOf: {
+      '@type': 'CreativeWorkSeries',
+      name: 'Drunk Robot',
+      url: new URL('/', Astro.site).toString(),
+    },
+  }}
+>
   <ComicReader comic={comic} nav={nav} allSlugs={allSlugs} />
 </Base>

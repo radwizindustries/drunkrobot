@@ -11,6 +11,17 @@ const nav = getNav(comics, latest.slug);
 const allSlugs = comics.map((c) => c.slug);
 ---
 
-<Base title={`Drunk Robot - ${latest.title}`}>
+<Base
+  title={`Drunk Robot - ${latest.title}`}
+  description="Drunk Robot, a weekly webcomic that ran 2011 to 2016. Restored from the Internet Archive."
+  image={`/comics/${latest.image}`}
+  structuredData={{
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'Drunk Robot',
+    url: new URL('/', Astro.site).toString(),
+    description: 'A weekly webcomic that ran 2011 to 2016, restored from the Internet Archive.',
+  }}
+>
   <ComicReader comic={latest} nav={nav} allSlugs={allSlugs} />
 </Base>

@@ -4,10 +4,30 @@ import '../styles/global.css';
 interface Props {
   title: string;
   description?: string;
+  /** Absolute or site-relative image URL for social share cards (og:image / twitter:image). */
+  image?: string;
+  /** 'article' for a single comic's page, 'website' for index/archive/listing pages. */
+  type?: 'website' | 'article';
+  /** Optional JSON-LD structured data object, rendered as a single <script type="application/ld+json">. */
+  structuredData?: Record<string, unknown>;
 }
 
-const { title, description = 'Drunk Robot, a weekly webcomic that ran 2011 to 2016.' } = Astro.props;
+const {
+  title,
+  description = 'Drunk Robot, a weekly webcomic that ran 2011 to 2016.',
+  image,
+  type = 'website',
+  structuredData,
+} = Astro.props;
 const path = Astro.url.pathname;
+const canonicalURL = new URL(path, Astro.site);
+const imageURL = image ? new URL(image, Astro.site).toString() : undefined;
+// JSON.stringify doesn't escape "<", so a "</script>" inside any string
+// value would break out of the script tag; escaping it keeps this safe
+// regardless of what future data flows through structuredData.
+const structuredDataJSON = structuredData
+  ? JSON.stringify(structuredData).replace(/</g, '\\u003c')
+  : undefined;
 ---
 
 <!doctype html>
@@ -17,7 +37,35 @@ const path = Astro.url.pathname;
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
     <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="canonical" href={canonicalURL} />
     <title>{title}</title>
+
+    <meta property="og:site_name" content="Drunk Robot" />
+    <meta property="og:type" content={type} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalURL} />
+    {imageURL && <meta property="og:image" content={imageURL} />}
+    <meta name="twitter:card" content={imageURL ? 'summary_large_image' : 'summary'} />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    {imageURL && <meta name="twitter:image" content={imageURL} />}
+
+    {structuredDataJSON && (
+      <script type="application/ld+json" set:html={structuredDataJSON} />
+    )}
+
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-YB0S160EP5"></script>
+    <script is:inline>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() { dataLayer.push(arguments); }
+      gtag('js', new Date());
+      gtag('config', 'G-YB0S160EP5');
+    </script>
+    <script
+      async
+      src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4622629903563464"
+      crossorigin="anonymous"></script>
   </head>
   <body>
     <header class="site-header">

@@ -10,6 +10,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@astrojs/sitemap": "^3.7.3",
     "@fontsource/anton": "^5.1.0",
     "astro": "^5.0.0"
   },
