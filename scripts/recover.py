@@ -194,6 +194,12 @@ def parse_post(html_text: str) -> dict:
         body = m.group(1)
         body = re.sub(r"<!-- Facebook Comments.*$", "", body, flags=re.S)
         body = re.sub(r'<div class="fb-comments".*$', "", body, flags=re.S)
+        # Only strips <script> tags, not event-handler attributes or
+        # javascript: URIs -- sufficient for this one-shot run against a
+        # fixed, now-frozen archive (verified benign), but not a general
+        # sanitizer. If this script is ever re-run against new/untrusted
+        # source HTML, body needs real HTML sanitization before it reaches
+        # ComicReader.astro's `set:html`.
         body = re.sub(r"<script\b.*?</script>", "", body, flags=re.S)
         body = re.sub(r"<p>(&nbsp;|\s)*</p>", "", body)
         # drop dangling close-tags left by the fb-comments cut

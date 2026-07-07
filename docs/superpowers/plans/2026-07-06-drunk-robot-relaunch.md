@@ -1714,6 +1714,15 @@ git commit -m "feat: archive grid, about page, legacy URL redirects"
 
 ### Task 8: Deploy: GitHub push, Actions workflow, Hostinger secrets
 
+> **Superseded (2026-07-07):** this task's steps below describe FTPS deploy to
+> shared hosting, based on the assumption in the spec's Component 3. Mid-task,
+> the actual target turned out to be a Hostinger VPS running Docker + Traefik
+> (multi-tenant, hosting several other sites), not shared hosting. The
+> implemented deploy is rsync-over-SSH to `/opt/drunk-robot-site/dist/`
+> (config in `deploy/docker-compose.yml` and `deploy/nginx.conf`), not FTPS.
+> Site is live at https://drunk-robot.com. See `.superpowers/sdd/progress.md`
+> for the full narrative; steps below are kept for historical record.
+
 **Files:**
 - Create: `.github/workflows/deploy.yml`
 - Create: `README.md`
