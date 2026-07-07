@@ -1,0 +1,41 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description = 'Drunk Robot, a weekly webcomic that ran 2011 to 2016.' } = Astro.props;
+const path = Astro.url.pathname;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <title>{title}</title>
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="wrap">
+        <a class="logo display" href="/">DRUNK<em>ROBOT</em></a>
+        <nav class="site-nav">
+          <a href="/archive/" aria-current={path.startsWith('/archive') ? 'page' : undefined}>Archive</a>
+          <a href="/about/" aria-current={path.startsWith('/about') ? 'page' : undefined}>About</a>
+        </nav>
+      </div>
+    </header>
+    <main class="wrap">
+      <slot />
+    </main>
+    <footer class="site-footer">
+      <div class="wrap">
+        Drunk Robot ran weekly from 2011 to 2016. Restored from the Internet Archive in 2026.
+      </div>
+    </footer>
+  </body>
+</html>

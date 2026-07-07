@@ -1,0 +1,78 @@
+@import '@fontsource/anton';
+
+:root {
+  --bg: #111;
+  --panel: #1c1c1c;
+  --red: #e0263f;
+  --text: #f2f2f2;
+  --muted: #999;
+}
+
+* { box-sizing: border-box; }
+
+html {
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, sans-serif;
+  line-height: 1.6;
+}
+
+body { margin: 0; min-height: 100vh; }
+
+.display {
+  font-family: 'Anton', Impact, 'Arial Black', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  font-weight: 400;
+}
+
+a { color: var(--red); }
+
+.wrap { max-width: 960px; margin: 0 auto; padding: 0 1rem; }
+
+.site-header {
+  border-bottom: 4px solid var(--red);
+  padding: 1rem 0;
+}
+
+.site-header .wrap {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.logo {
+  font-size: 1.75rem;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.logo em { color: var(--red); font-style: normal; }
+
+.site-nav a {
+  color: var(--muted);
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 0.8rem;
+  margin-left: 1.25rem;
+}
+
+.site-nav a:hover, .site-nav a[aria-current='page'] { color: var(--red); }
+
+.frame {
+  border: 6px solid var(--red);
+  background: #000;
+}
+
+.frame img { display: block; width: 100%; height: auto; }
+
+.site-footer {
+  border-top: 1px solid #2a2a2a;
+  margin-top: 3rem;
+  padding: 1.5rem 0 5rem;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
