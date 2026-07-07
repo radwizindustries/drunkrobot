@@ -22,6 +22,14 @@ Re-running it is safe: fetches are cached in `scripts/.cache/`.
 
 ## Deploy
 
-Pushes to `main` build and deploy to Hostinger over FTPS via GitHub Actions
-(`.github/workflows/deploy.yml`). Secrets: `HOSTINGER_FTP_HOST`,
-`HOSTINGER_FTP_USER`, `HOSTINGER_FTP_PASSWORD`.
+The site runs on a Hostinger VPS behind Traefik, alongside several other
+sites, each served from its own `nginx:alpine` container. Pushes to `main`
+build the site and deploy it via `rsync` over SSH to that VPS through GitHub
+Actions (`.github/workflows/deploy.yml`), landing in
+`/opt/drunk-robot-site/dist/`, which the container serves. The
+docker-compose/nginx.conf that define the container and Traefik routing live
+in `deploy/` for reference; they're already provisioned on the VPS and are
+not touched by the deploy workflow.
+
+Secrets: `HOSTINGER_SSH_HOST`, `HOSTINGER_SSH_USER`, `HOSTINGER_SSH_KEY`
+(private key, PEM format).

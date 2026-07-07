@@ -20,12 +20,16 @@ jobs:
 
       - run: npm run build
 
-      - name: Deploy over FTPS
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+      - name: Load SSH key
+        uses: webfactory/ssh-agent@v0.9.0
         with:
-          server: ${{ secrets.HOSTINGER_FTP_HOST }}
-          username: ${{ secrets.HOSTINGER_FTP_USER }}
-          password: ${{ secrets.HOSTINGER_FTP_PASSWORD }}
-          protocol: ftps
-          local-dir: ./dist/
-          server-dir: ./
+          ssh-private-key: ${{ secrets.HOSTINGER_SSH_KEY }}
+
+      - name: Pin VPS host key
+        run: |
+          mkdir -p ~/.ssh
+          echo "31.220.20.93 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINxCV9leBjiY+uKaAfHk/XAT7STtOpnVzPhULck7i6Y4" >> ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+      - name: Deploy over rsync/SSH
+        run: rsync -az --delete dist/ ${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_SSH_HOST }}:/opt/drunk-robot-site/dist/
