@@ -1,4 +1,4 @@
-# Drunk Robot Relaunch — Design
+# Drunk Robot Relaunch: Design
 
 **Date:** 2026-07-06
 **Status:** Approved pending user spec review
@@ -12,8 +12,8 @@ Resurrect drunk-robot.com, a webcomic site that ran on WordPress + ComicPress fr
 - **Recovery scope:** best-effort recovery of all comics. Accept that some may be unrecoverable if Wayback never captured them.
 - **Sub-strips** (`chuck-hero`, `reboot`, `bing`, `space-time-improbability`, `total-recall-reboot`, etc.): ordinary comic posts, same treatment as everything else, one unified archive.
 - **Legacy features:** dropped. No comments, no RSS, no share buttons, no buy-print. Clean archive plus an about page.
-- **Visual direction:** Panel Noir — bold, high-contrast, near-black background, signature red comic-gutter framing, condensed display type.
-- **Homepage:** Classic Reader — the latest strip with First / Prev / Random / Next navigation.
+- **Visual direction:** Panel Noir: bold, high-contrast, near-black background, signature red comic-gutter framing, condensed display type.
+- **Homepage:** Classic Reader: the latest strip with First / Prev / Random / Next navigation.
 - **Recovery method:** purpose-built Python crawl script kept in the repo (reproducible, produces a recovery report), not a bulk mirror tool or ad-hoc fetching.
 - **Deploy method:** GitHub Actions builds on push to `main` and uploads over FTPS to Hostinger. Chosen because it works on every Hostinger plan, unlike hPanel's Git feature.
 
@@ -29,10 +29,10 @@ Resurrect drunk-robot.com, a webcomic site that ran on WordPress + ComicPress fr
 
 `scripts/recover.py`, Python 3 stdlib only. Four passes:
 
-1. **Discover** — query the Wayback CDX API for all captures under `drunk-robot.com/*`. Seed a candidate post list from root-level slug pages, dated post URLs, `?p=NNN` WordPress IDs, and category/author archive listing pages.
-2. **Crawl** — fetch the best snapshot of each candidate post. Follow prev/next navigation links inside fetched pages to discover posts CDX never indexed. Parse feed snapshots for posts that survive only as RSS.
-3. **Extract** — per post: title, publish date, slug, comic image filename, author commentary HTML. Download each comic image, preferring the largest capture when several exist.
-4. **Report** — emit `src/data/comics.json` and `recovery-report.md` (recovered / known-but-unrecoverable / ambiguous items for human review).
+1. **Discover**: query the Wayback CDX API for all captures under `drunk-robot.com/*`. Seed a candidate post list from root-level slug pages, dated post URLs, `?p=NNN` WordPress IDs, and category/author archive listing pages.
+2. **Crawl**: fetch the best snapshot of each candidate post. Follow prev/next navigation links inside fetched pages to discover posts CDX never indexed. Parse feed snapshots for posts that survive only as RSS.
+3. **Extract**: per post: title, publish date, slug, comic image filename, author commentary HTML. Download each comic image, preferring the largest capture when several exist.
+4. **Report**: emit `src/data/comics.json` and `recovery-report.md` (recovered / known-but-unrecoverable / ambiguous items for human review).
 
 ### Data model (`src/data/comics.json`)
 
