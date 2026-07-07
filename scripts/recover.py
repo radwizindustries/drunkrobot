@@ -27,6 +27,9 @@ NON_POST_SEGMENTS = {
     "category", "author", "tag", "page", "feed", "comments",
     "wp-content", "wp-includes", "wp-admin", "comics", "comics-mini", "img",
 }
+# Extensions that never get a trailing slash in normalize_url. Note: classify()
+# deliberately treats only image extensions as "asset" (downloadable media);
+# .css/.js/etc. fall through to "other" since the crawler never fetches them.
 ASSET_EXTENSIONS = (".jpg", ".jpeg", ".gif", ".png", ".css", ".js", ".ico",
                     ".xml", ".txt", ".php")
 
@@ -98,6 +101,8 @@ def classify(path: str) -> str:
     if path.lower().endswith((".jpg", ".jpeg", ".gif", ".png", ".ico")):
         return "asset"
     segments = [s for s in path.strip("/").split("/") if s]
+    if not segments:
+        return "other"
     if segments[-1] == "feed":
         return "feed"
     if segments[0] in ("category", "author"):

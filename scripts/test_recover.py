@@ -65,6 +65,9 @@ class TestClassify(unittest.TestCase):
     def test_homepage_is_other(self):
         self.assertEqual(recover.classify("/"), "other")
 
+    def test_degenerate_path_is_other(self):
+        self.assertEqual(recover.classify("//"), "other")
+
 
 class TestBestSnapshot(unittest.TestCase):
     def rows(self, *specs):
@@ -93,13 +96,14 @@ class TestBestSnapshot(unittest.TestCase):
 
 class TestCdxFixture(unittest.TestCase):
     def test_fixture_discovers_known_posts(self):
-        rows = json.load(open(FIXTURES / "cdx_sample.json"))[1:]
-        paths = {recover.normalize_url(r[2]) for r in rows}
-        posts = {p for p in paths if recover.classify(p) in ("post-slug", "post-dated")}
-        self.assertIn("/cosplay-faux-pas/", posts)
-        self.assertIn("/2011/06/20/dance-of-madness/", posts)
-        self.assertIn("/05142006/", posts)
-        self.assertGreater(len(posts), 40)
+        with open(FIXTURES / "cdx_sample.json") as f:
+            rows = json.load(f)[1:]
+            paths = {recover.normalize_url(r[2]) for r in rows}
+            posts = {p for p in paths if recover.classify(p) in ("post-slug", "post-dated")}
+            self.assertIn("/cosplay-faux-pas/", posts)
+            self.assertIn("/2011/06/20/dance-of-madness/", posts)
+            self.assertIn("/05142006/", posts)
+            self.assertGreater(len(posts), 40)
 
 
 if __name__ == "__main__":
