@@ -75,7 +75,7 @@ Comics load through Astro's content-collection API backed by `comics.json`. Addi
 ## Component 3: Repo + Deploy
 
 - Everything in `git@github.com:radwizindustries/drunkrobot.git` (currently empty, SSH access verified). `main` is the deploy branch.
-- GitHub Actions workflow on push to `main`: checkout → Node 20 → `npm ci && npm run build` → `SamKirkland/FTP-Deploy-Action` uploads `dist/` to `public_html/` over FTPS. Incremental sync.
+- GitHub Actions workflow on push to `main`: checkout → Node 22 → `npm ci && npm run build` → `SamKirkland/FTP-Deploy-Action` uploads `dist/` to `public_html/` over FTPS. Incremental sync.
 - Credentials as repo secrets: `HOSTINGER_FTP_HOST`, `HOSTINGER_FTP_USER`, `HOSTINGER_FTP_PASSWORD`. Never committed, never pasted in chat; user copies them from hPanel into GitHub settings.
 
 ## Error Handling
