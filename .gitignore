@@ -4,3 +4,4 @@ dist/
 .DS_Store
 scripts/.cache/
 scripts/recovery-run.log
+scripts/__pycache__/
