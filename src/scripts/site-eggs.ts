@@ -58,4 +58,8 @@ function initGlobalEggs(): void {
   });
 }
 
-if (typeof window !== 'undefined') initGlobalEggs();
+declare global { interface Window { __drEggs?: boolean; } }
+if (typeof window !== 'undefined' && !window.__drEggs) {
+  window.__drEggs = true;
+  initGlobalEggs();
+}
