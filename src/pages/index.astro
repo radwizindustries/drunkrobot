@@ -3,6 +3,7 @@ import { getCollection } from 'astro:content';
 import ComicReader from '../components/ComicReader.astro';
 import Base from '../layouts/Base.astro';
 import { getNav, sortByDate } from '../lib/comicNav';
+import { SITE_DESCRIPTION } from '../lib/site';
 
 const entries = await getCollection('comics');
 const comics = sortByDate(entries.map((e) => e.data));
@@ -13,7 +14,7 @@ const allSlugs = comics.map((c) => c.slug);
 
 <Base
   title={`Drunk Robot - ${latest.title}`}
-  description="Drunk Robot, a weekly webcomic skewering comics, sci-fi, and nerd culture. Ran 2011 to 2016, restored from the Internet Archive, publishing again."
+  description={SITE_DESCRIPTION}
   image={`/comics/${latest.image}`}
   preloadImage={nav.prev ? `/comics/${nav.prev.image}` : undefined}
   structuredData={{
@@ -21,7 +22,7 @@ const allSlugs = comics.map((c) => c.slug);
     '@type': 'WebSite',
     name: 'Drunk Robot',
     url: new URL('/', Astro.site).toString(),
-    description: 'A weekly webcomic skewering comics, sci-fi, and nerd culture. Ran 2011 to 2016, restored from the Internet Archive, publishing again.',
+    description: SITE_DESCRIPTION,
     potentialAction: {
       '@type': 'SearchAction',
       target: {

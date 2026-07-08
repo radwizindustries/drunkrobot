@@ -1,26 +1,103 @@
 ---
+import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
+import { sortByDate } from '../lib/comicNav';
+import { AUTHOR_SCHEMA, SITE_DESCRIPTION } from '../lib/site';
+
+const entries = await getCollection('comics');
+const comics = sortByDate(entries.map((e) => e.data));
+const first = comics[0];
+
+const faq = [
+  {
+    q: 'What is Drunk Robot?',
+    a: 'Drunk Robot is a webcomic written by Brian Powell and drawn by Jeff Pina. It skewers comics, sci-fi, and nerd culture, usually through robots with strong opinions.',
+  },
+  {
+    q: 'When does Drunk Robot update?',
+    a: 'The original run published a new strip every Monday from 2011 to 2016. The reboot is publishing again; subscribe to the RSS feed at /rss.xml to catch new strips the moment they land.',
+  },
+  {
+    q: 'Where should I start reading?',
+    a: `Start at the first strip, "${first.title}", and use the Next button, or browse the archive by year. The Random button works too; it never repeats a strip within a session.`,
+  },
+  {
+    q: 'What happened between 2016 and 2026?',
+    a: 'The original site went offline and its strips were lost. In 2026 the archive was restored from snapshots preserved by the Internet Archive Wayback Machine, and the comic relaunched with new strips.',
+  },
+];
 ---
 
-<Base title="Drunk Robot - About">
+<Base
+  title="About Drunk Robot"
+  description={SITE_DESCRIPTION}
+  structuredData={{
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'AboutPage',
+        name: 'About Drunk Robot',
+        url: Astro.url.toString(),
+        description: SITE_DESCRIPTION,
+        author: AUTHOR_SCHEMA,
+      },
+      {
+        '@type': 'FAQPage',
+        mainEntity: faq.map((item) => ({
+          '@type': 'Question',
+          name: item.q,
+          acceptedAnswer: { '@type': 'Answer', text: item.a },
+        })),
+      },
+    ],
+  }}
+>
   <div class="about">
     <h1 class="display">About Drunk Robot</h1>
     <p>
-      Drunk Robot was a weekly webcomic that ran from 2011 to 2016, written by
-      Brian Powell and drawn by Jeff Pina. A new strip landed every Monday,
-      skewering comics, sci-fi, and nerd culture at large.
+      Drunk Robot is a webcomic written by Brian Powell and drawn by Jeff
+      Pina. It ran weekly from 2011 to 2016, went offline for a decade, was
+      restored from the Internet Archive, and is publishing again. The jokes
+      aim at comics, sci-fi, and nerd culture at large.
     </p>
     <p>
-      The original site went offline years ago. This archive was restored from
+      The original site vanished years ago. This archive was rebuilt from
       snapshots preserved by the
-      <a href="https://web.archive.org">Internet Archive's Wayback Machine</a>,
-      and rebuilt as a fast, modern site. Some strips may be lost to time; what
-      could be recovered lives in the <a href="/archive/">archive</a>.
+      <a href="https://web.archive.org">Internet Archive's Wayback Machine</a>.
+      Some strips may be lost to time; everything recovered so far lives in
+      the <a href="/archive/">archive</a>, and every strip carries a full
+      transcript you can <a href="/search/">search</a>.
+    </p>
+
+    <h2 class="display">Frequently asked questions</h2>
+    <dl class="faq">
+      {faq.map((item) => (
+        <>
+          <dt>{item.q}</dt>
+          <dd>{item.a}</dd>
+        </>
+      ))}
+    </dl>
+
+    <p class="readout">
+      First strip: <a href={`/comic/${first.slug}/`}>{first.title}</a> ·
+      <a href="/rss.xml">RSS feed</a>
     </p>
   </div>
 </Base>
 
 <style>
   .about { max-width: 640px; }
-  h1 { margin: 1.5rem 0 1rem; font-size: 1.8rem; }
+  h1 { margin: 1.5rem 0 1rem; font-size: 1.8rem; color: var(--ink); }
+  h2 { font-size: 1.2rem; color: var(--ink); margin: 2rem 0 0.75rem; }
+  .faq dt {
+    font-weight: 600;
+    color: var(--ink);
+    margin-top: 1rem;
+  }
+  .faq dd {
+    margin: 0.25rem 0 0;
+    color: var(--muted);
+  }
+  .readout { margin-top: 2rem; }
 </style>

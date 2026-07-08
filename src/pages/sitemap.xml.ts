@@ -22,6 +22,7 @@ export const GET: APIRoute = ({ site }) => {
   const entries: { loc: string; lastmod?: string; changefreq: string; priority: string }[] = [
     { loc: '/', lastmod: latestComicDate, changefreq: 'monthly', priority: '1.0' },
     { loc: '/archive/', lastmod: latestComicDate, changefreq: 'monthly', priority: '0.8' },
+    { loc: '/search/', changefreq: 'monthly', priority: '0.5' },
     { loc: '/about/', changefreq: 'yearly', priority: '0.5' },
     ...comics.map((c) => ({
       loc: `/comic/${c.slug}/`,
