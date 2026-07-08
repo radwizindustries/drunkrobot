@@ -4,7 +4,7 @@ All notable changes to drunk-robot.com. Format follows
 [Keep a Changelog](https://keepachangelog.com); versions are tagged
 `vX.Y.Z` in git.
 
-## [3.0.0] - Unreleased "Phosphor"
+## [3.0.0] - 2026-07-08 "Phosphor"
 
 ### Added
 - **Phosphor theme:** a green-screen CRT "barcade" redesign. New design
