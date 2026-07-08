@@ -7,8 +7,8 @@ export const SITE_NAME = 'Drunk Robot';
 
 export const SITE_DESCRIPTION =
   'Drunk Robot is a webcomic written by Brian Powell and drawn by Jeff Pina. ' +
-  'It ran weekly from 2011 to 2016, was restored from the Internet Archive, ' +
-  'and is publishing again, skewering comics, sci-fi, and nerd culture.';
+  'It ran weekly from 2011 to 2016 and is publishing again, skewering comics, ' +
+  'sci-fi, and nerd culture.';
 
 export const AUTHORS = [
   { name: 'Brian Powell', role: 'writer' },
