@@ -1,5 +1,6 @@
-import { defineCollection, z } from 'astro:content';
+import { defineCollection } from 'astro:content';
 import { file } from 'astro/loaders';
+import { z } from 'astro/zod';
 
 const comics = defineCollection({
   loader: file('src/data/comics.json', {
@@ -12,7 +13,7 @@ const comics = defineCollection({
     date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
     image: z.string().min(1),
     body: z.string(),
-    source: z.string().url(),
+    source: z.url(),
     // Full dialogue/action text. Powers search, SEO, AEO, and accessibility;
     // required for every strip, past and future.
     transcript: z.string().min(1),

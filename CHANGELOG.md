@@ -4,6 +4,15 @@ All notable changes to drunk-robot.com. Format follows
 [Keep a Changelog](https://keepachangelog.com); versions are tagged
 `vX.Y.Z` in git.
 
+## [2.0.1] - 2026-07-07
+
+### Changed
+- Upgraded Astro 5 to 7 (with Zod 4): `z` now imports from `astro/zod`,
+  `source` uses `z.url()`, and `compressHTML: true` is pinned to keep
+  spaces around inline elements (Astro 7 defaults to JSX-style stripping).
+  Clears all `npm audit` advisories (previously 1 high, 1 low against
+  Astro 5's bundled toolchain). No user-facing changes.
+
 ## [2.0.0] - 2026-07-07 "The Reboot"
 
 ### Added

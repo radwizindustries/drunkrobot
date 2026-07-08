@@ -12,4 +12,8 @@ for (const c of comics) {
 export default defineConfig({
   site: 'https://drunk-robot.com',
   redirects,
+  // Astro 7 defaults to JSX-style whitespace stripping between inline
+  // elements, which eats the deliberate spaces in lines like
+  // "EST 2011 · REBOOTED 2026". Keep the pre-7 compression behavior.
+  compressHTML: true,
 });
