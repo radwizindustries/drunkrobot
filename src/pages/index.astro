@@ -36,7 +36,7 @@ const allSlugs = comics.map((c) => c.slug);
   <p class="resume readout" id="resume" hidden>
     &gt; <a id="resume-link" href="/">Continue where you left off</a><span class="cursor" aria-hidden="true">_</span>
   </p>
-  <ComicReader comic={latest} nav={nav} allSlugs={allSlugs} recordLast={false} />
+  <ComicReader comic={latest} nav={nav} allSlugs={allSlugs} canonical={false} />
 </Base>
 
 <script is:inline define:vars={{ latestSlug: latest.slug, allSlugs }}>

@@ -18,6 +18,15 @@ const years = [...byYear.keys()].sort().reverse(); // newest year first
 <Base title="Drunk Robot - Archive">
   <h1 class="display">The Complete Archive</h1>
   <p class="readout">{comics.length} strips recovered · 2011 to 2016</p>
+  <form class="archive-search" action="/search/" method="get" role="search">
+    <input
+      type="search"
+      name="q"
+      placeholder="Find that comic where..."
+      aria-label="Search comics"
+    />
+    <button class="btn-panel display" type="submit">Search</button>
+  </form>
   {years.map((year) => (
     <section aria-labelledby={`year-${year}`}>
       <h2 class="display year" id={`year-${year}`}>
@@ -50,6 +59,22 @@ const years = [...byYear.keys()].sort().reverse(); // newest year first
     justify-content: space-between;
     align-items: baseline;
   }
+  .archive-search {
+    display: flex;
+    gap: 0.6rem;
+    margin: 1.25rem 0 0.5rem;
+    max-width: 420px;
+  }
+  .archive-search input {
+    flex: 1;
+    min-width: 0;
+    background: var(--surface);
+    border: 1px solid var(--hairline);
+    color: var(--text);
+    padding: 0.5rem 0.75rem;
+    font-size: 0.9rem;
+  }
+  .archive-search input::placeholder { color: var(--muted); }
   .grid {
     list-style: none;
     padding: 0;

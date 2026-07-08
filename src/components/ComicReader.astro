@@ -5,12 +5,14 @@ interface Props {
   comic: Comic;
   nav: ComicNav;
   allSlugs: string[];
-  /** Record this strip as the reader's position. Off on the homepage so a
-      mid-archive position survives a visit to the front page. */
-  recordLast?: boolean;
+  /** True on the strip's own /comic/ page; false when the homepage mirrors
+      the latest strip. Controls reading-position recording (a mid-archive
+      position must survive a front-page visit) and Pagefind indexing (the
+      homepage copy would be a duplicate search result). */
+  canonical?: boolean;
 }
 
-const { comic, nav, allSlugs, recordLast = true } = Astro.props;
+const { comic, nav, allSlugs, canonical = true } = Astro.props;
 const displayDate = new Date(comic.date + 'T00:00:00').toLocaleDateString('en-US', {
   year: 'numeric', month: 'long', day: 'numeric',
 });
@@ -18,13 +20,13 @@ const prevURL = nav.prev ? `/comic/${nav.prev.slug}/` : null;
 const nextURL = nav.next ? `/comic/${nav.next.slug}/` : null;
 ---
 
-<article class="reader">
-  <div class="meta readout">
+<article class="reader" data-pagefind-body={canonical ? 'true' : undefined}>
+  <div class="meta readout" data-pagefind-ignore>
     <span>Strip <span class="lit">{String(nav.index + 1).padStart(3, '0')}</span>/{String(nav.total).padStart(3, '0')}</span>
     <time datetime={comic.date}>{displayDate}</time>
   </div>
   <h1 class="display">{comic.title}</h1>
-  <nav class="reader-nav top" aria-label="Comic navigation (top)">
+  <nav class="reader-nav top" aria-label="Comic navigation (top)" data-pagefind-ignore>
     {prevURL
       ? <a class="btn-panel display" href={prevURL} rel="prev">&#8249; Prev</a>
       : <span class="btn-panel display disabled" aria-disabled="true">&#8249; Prev</span>}
@@ -32,7 +34,7 @@ const nextURL = nav.next ? `/comic/${nav.next.slug}/` : null;
       ? <a class="btn-panel display" href={nextURL} rel="next">Next &#8250;</a>
       : <span class="btn-panel display disabled" aria-disabled="true">Next &#8250;</span>}
   </nav>
-  <div class="frame" data-pagefind-body>
+  <div class="frame">
     <img
       src={`/comics/${comic.image}`}
       alt={comic.altText}
@@ -52,7 +54,7 @@ const nextURL = nav.next ? `/comic/${nav.next.slug}/` : null;
     >&#183;&#183;&#183;</button>
     <p class="hovertext readout" id="hovertext" hidden>{comic.hoverText}</p>
   </div>
-  <nav class="reader-nav" aria-label="Comic navigation">
+  <nav class="reader-nav" aria-label="Comic navigation" data-pagefind-ignore>
     {nav.prev
       ? <a class="btn-panel display" href={`/comic/${nav.first.slug}/`}>&#171; First</a>
       : <span class="btn-panel display disabled" aria-disabled="true">&#171; First</span>}
@@ -67,7 +69,7 @@ const nextURL = nav.next ? `/comic/${nav.next.slug}/` : null;
       ? <a class="btn-panel display" href={`/comic/${nav.last.slug}/`}>Last &#187;</a>
       : <span class="btn-panel display disabled" aria-disabled="true">Last &#187;</span>}
   </nav>
-  <details class="transcript" data-pagefind-body>
+  <details class="transcript">
     <summary class="readout">Transcript</summary>
     <h2 class="sr-only">Transcript of “{comic.title}”</h2>
     <div class="transcript-text">{comic.transcript}</div>
@@ -75,9 +77,9 @@ const nextURL = nav.next ? `/comic/${nav.next.slug}/` : null;
   {comic.body && <div class="commentary" set:html={comic.body} />}
 </article>
 
-<script is:inline define:vars={{ allSlugs, prevURL, nextURL, currentSlug: comic.slug, recordLast }}>
+<script is:inline define:vars={{ allSlugs, prevURL, nextURL, currentSlug: comic.slug, canonical }}>
   // Remember where the reader left off (homepage offers a resume link).
-  if (recordLast) {
+  if (canonical) {
     try { localStorage.setItem('dr-last', currentSlug); } catch (e) {}
   }
 
