@@ -4,6 +4,33 @@ All notable changes to drunk-robot.com. Format follows
 [Keep a Changelog](https://keepachangelog.com); versions are tagged
 `vX.Y.Z` in git.
 
+## [3.0.0] - Unreleased "Phosphor"
+
+### Added
+- **Phosphor theme:** a green-screen CRT "barcade" redesign. New design
+  system in `src/styles/global.css` (near-black + phosphor green + amber,
+  VT323 + Press Start 2P, a reduced-motion-gated scanline/vignette overlay).
+- **Single-column homepage:** terminal search, latest strip in a CRT screen,
+  title/byline/body, author boxes, transcript, mini-game, terminal-menu nav.
+- **Drunk Stagger:** an 8-bit `<canvas>` dodge-runner (`src/scripts/
+  drunk-stagger.js`), lazy-loaded on first click so no game code is in first
+  paint; keyboard + touch; high score in `localStorage`.
+- **Easter eggs:** Matrix rain (`neo`/`wake up neo`/`matrix` in search),
+  Konami code (screen glitch + mini-game cheat), refreshed console greeting;
+  kept the `boop` → `/terminal/` egg.
+- **AdSense scaffolding** (`AdSlot.astro`), disabled by default behind
+  `PUBLIC_ADSENSE_ENABLED`; the ad loader is gated by the same flag.
+
+### Changed
+- Reskinned reader, archive, search, about, 404, and terminal to Phosphor.
+  Archive thumbnails now use `object-fit: contain`. Comic art always renders
+  on white, above the CRT overlay.
+
+### Removed
+- All visible "Internet Archive" / "Wayback Machine" / "restored" copy
+  (`site.ts` `SITE_DESCRIPTION`, About page, footer). Strip images unchanged
+  pending the artist's backup.
+
 ## [2.0.1] - 2026-07-07
 
 ### Changed

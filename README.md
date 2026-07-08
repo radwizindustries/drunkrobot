@@ -1,9 +1,8 @@
 # Drunk Robot
 
 The website for Drunk Robot, a webcomic written by Brian Powell and drawn by
-Jeff Pina. It ran weekly from 2011 to 2016, went offline for a decade, was
-restored from the Internet Archive's Wayback Machine, and is publishing
-again. Live at <https://drunk-robot.com>.
+Jeff Pina. It ran weekly from 2011 to 2016 and is publishing again. Live at
+<https://drunk-robot.com>.
 
 > **Keep this README current.** Whenever the site changes (new features,
 > layout changes, new pages, workflow changes), update the relevant section
@@ -32,7 +31,7 @@ again. Live at <https://drunk-robot.com>.
 
 | URL | Source | Purpose |
 |-----|--------|---------|
-| `/` | `src/pages/index.astro` | Latest strip, zero clicks away. Shows a "continue where you left off" resume link when localStorage has a reading position. |
+| `/` | `src/pages/index.astro` | Single-column "arcade cabinet" homepage: terminal search, the latest strip in a CRT screen, title/byline/body, author boxes, transcript, the Drunk Stagger mini-game, and a terminal-menu nav. |
 | `/comic/<slug>/` | `src/pages/comic/[slug].astro` | One page per strip, the SEO unit. **Never break these URLs.** |
 | `/archive/` | `src/pages/archive.astro` | Every strip, grouped by year, with thumbnails and a search box. |
 | `/search/` | `src/pages/search.astro` | Pagefind full-text search over transcripts. Supports `?q=` deep links. |
@@ -81,32 +80,42 @@ collection (schema in `src/content.config.ts`). Fields per strip:
 recovered), so don't re-run it without merging the hand-written
 transcript/altText/hoverText fields back in.
 
-## Design system ("Misprint")
+## Design system ("Phosphor")
 
-Defined in `src/styles/global.css` as CSS custom properties; components keep
-their own scoped styles.
+Green-screen CRT barcade. Defined in `src/styles/global.css` as CSS custom
+properties; components keep their own scoped styles.
 
-- **Themes:** dark ("lights off", default) and light, toggled by the header
+- **Themes:** dark ("attract mode", default) and light, toggled by the header
   LIGHTS button. Stored choice (`localStorage.dr-theme`) wins, else
   `prefers-color-scheme`, else dark. A `data-theme` attribute is set on
   `<html>` before first paint. The comic art itself is never dimmed or
-  filtered by either theme.
-- **Palette:** gunmetal `#10141a` / paper `#f7f5ef` backgrounds; paper-white
-  vs near-black "ink" for text and panel strokes; brand red `#e5273e` (the
-  strips' own watermark color); amber `#f5a623` as the robot-LED accent.
-  Link and focus colors are per-theme WCAG AA variants.
-- **Signature:** the "misprint" offset. The logo, comic frame, thumbnails,
-  and 404 headline carry a hard red offset shadow like an off-register comic
-  print run.
-- **Type:** Anton for display (matches the Impact-style lettering in the
-  strip watermarks), system stack for body, monospace for the robot
-  "readout" meta lines, dates, footer status, and terminal.
-- **Components:** `.frame` (ink-bordered comic panel), `.btn-panel`
-  (pressable panel buttons), `.readout` (HUD lines), `.display` / `.mono`
-  type utilities.
-- **Accessibility:** WCAG AA contrast in both themes, `:focus-visible`
-  amber outline everywhere, 44px tap targets, `prefers-reduced-motion`
-  respected, alt text on every strip, transcripts as structured text.
+  filtered by either theme, and always renders on white.
+- **Palette:** near-black `#040805` background, phosphor green `#39ff88`
+  text, amber `#ffb000` accents/warnings, dim green `#2fbf68` for secondary
+  text, `#173a22` hairlines. Light mode uses dark green on warm paper.
+- **Signature:** a fixed decorative CRT overlay (scanlines + vignette,
+  `aria-hidden`, `prefers-reduced-motion`-gated). Comic art (`.screen`,
+  `.frame`, archive `.thumb`) is lifted above the overlay so scanlines never
+  fall on the strips.
+- **Type:** VT323 for body/UI (the terminal readout font) and Press Start 2P
+  (`.pix`) for pixel headings and marquees.
+- **Components:** `.screen` (CRT frame), `.terminal-input` (`grep>` search),
+  `.btn-arcade` / `.btn-panel` (arcade buttons), `.menu` / `.menu-row`
+  (terminal nav), `.auth` (author boxes), `details.transcript`, `.card-panel`.
+  A small compat layer aliases v2 class/var names onto Phosphor tokens.
+- **Accessibility:** `:focus-visible` amber outline, alt text on every strip,
+  transcripts as structured text, and all animation (scanlines, cursor blink,
+  Matrix rain, the mini-game) gated behind `prefers-reduced-motion`.
+
+## Mini-game: Drunk Stagger
+
+An 8-bit dodge-runner on the homepage (`src/scripts/drunk-stagger.js`, vanilla
+`<canvas>`, no engine). The robot auto-runs a neon street; Space/tap hops over
+lampposts and potholes, bolts score points, it speeds up, high score persists
+in `localStorage` (`dr-stagger-hi`; logic + tests in `src/lib/stagger-score.ts`).
+It is dynamically `import()`-ed on first click (`src/scripts/stagger-boot.ts`),
+so no game code ships in the homepage's first paint. The Konami code grants a
+session cheat (extra lives). Reduced-motion shows a static "tap to play" cabinet.
 
 ## Reader features
 
@@ -114,10 +123,8 @@ their own scoped styles.
   compact Prev/Next pair above it; on phones the main nav is a fixed bottom
   bar. Left/right arrow keys and swipe gestures also navigate.
 - Random never repeats a strip within a session (`sessionStorage.dr-seen`).
-- Comic pages record the last-read slug (`localStorage.dr-last`); the
-  homepage shows a resume link when that differs from the latest strip. The
-  homepage itself does not record a position, so a mid-archive spot
-  survives a front-page visit.
+- Comic pages record the last-read slug (`localStorage.dr-last`) for future
+  use; the homepage always shows the latest strip.
 - Each strip page shows a collapsible transcript; hover text lives on the
   image `title` and behind the `···` tap target for touch screens.
 - The next strip's image is preloaded from each comic page.
@@ -137,9 +144,22 @@ their own scoped styles.
 
 ## Easter eggs
 
-Cheap, additive, never gating real navigation: hover text on every strip,
-the `/terminal/` DR-OS console, typing `boop` anywhere (opens the
-terminal), a devtools console greeting, and the themed 404.
+Cheap, additive, never gating real navigation (detectors in
+`src/lib/eastereggs.ts`, wiring in `src/scripts/site-eggs.ts`):
+
+- **Matrix rain:** searching `neo`, `wake up neo`, or `matrix` triggers a
+  full-screen green glyph rain (dismiss with any key/click).
+- **Konami code** (↑↑↓↓←→←→ B A) anywhere: a screen glitch + a `dr:konami`
+  event; on the homepage it grants the mini-game a session cheat.
+- **Console greeting** on load; hover text on every strip; typing `boop`
+  opens the `/terminal/` DR-OS console; and the themed "GAME OVER" 404.
+
+## Ads
+
+Display ads are scaffolded but off. `src/components/AdSlot.astro` renders
+nothing until `PUBLIC_ADSENSE_ENABLED=true` (and `PUBLIC_ADSENSE_CLIENT`);
+the AdSense loader in `Base.astro` is gated by the same flag, so no ad script
+ships by default. Slots exist on the homepage and comic pages.
 
 ## Recovery (history)
 

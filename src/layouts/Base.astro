@@ -31,6 +31,10 @@ const imageURL = image ? new URL(image, Astro.site).toString() : undefined;
 const structuredDataJSON = structuredData
   ? JSON.stringify(structuredData).replace(/</g, '\\u003c')
   : undefined;
+// Display ads stay off until PUBLIC_ADSENSE_ENABLED=true. The publisher id
+// defaults to the site's existing account so flipping the flag "just works".
+const ADSENSE_ENABLED = import.meta.env.PUBLIC_ADSENSE_ENABLED === 'true';
+const ADSENSE_CLIENT = import.meta.env.PUBLIC_ADSENSE_CLIENT ?? 'ca-pub-4622629903563464';
 ---
 
 <!doctype html>
@@ -79,12 +83,15 @@ const structuredDataJSON = structuredData
       gtag('js', new Date());
       gtag('config', 'G-YB0S160EP5');
     </script>
-    <script
-      async
-      src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4622629903563464"
-      crossorigin="anonymous"></script>
+    {ADSENSE_ENABLED && (
+      <script
+        async
+        src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT}`}
+        crossorigin="anonymous"></script>
+    )}
   </head>
   <body>
+    <div class="crt-overlay" aria-hidden="true"></div>
     <header class="site-header">
       <div class="wrap">
         <a class="logo display" href="/">DRUNK<em>ROBOT</em></a>
@@ -113,9 +120,8 @@ const structuredDataJSON = structuredData
           DRUNK-ROBOT.COM · EST 2011 · <span class="lit">REBOOTED 2026</span>
         </p>
         <p>
-          Drunk Robot ran weekly from 2011 to 2016, was restored from the
-          Internet Archive, and publishes again. &copy; 2011&ndash;2026 Brian
-          Powell &amp; Jeff Pina.
+          Drunk Robot ran weekly from 2011 to 2016 and publishes again.
+          &copy; 2011&ndash;2026 Brian Powell &amp; Jeff Pina.
         </p>
       </div>
     </footer>
@@ -125,14 +131,6 @@ const structuredDataJSON = structuredData
         document.documentElement.dataset.theme = next;
         try { localStorage.setItem('dr-theme', next); } catch (e) {}
       });
-
-      // For the humans who open the hood.
-      console.log(
-        '%cDRUNK ROBOT%c\n01000011 01001000 01000101 01000101 01010010 01010011\n' +
-          'Sober enough to read console output? The maintenance hatch is at /terminal/',
-        'font-family: Impact, sans-serif; font-size: 24px; color: #e5273e;',
-        'font-family: monospace; color: #f5a623;'
-      );
 
       // Typing b-o-o-p anywhere opens the maintenance terminal.
       // (A true Konami code would fight the arrow-key comic navigation.)
@@ -146,6 +144,9 @@ const structuredDataJSON = structuredData
           if (buffer === 'boop') window.location.href = '/terminal/';
         });
       })();
+    </script>
+    <script>
+      import '../scripts/site-eggs.ts';
     </script>
   </body>
 </html>
