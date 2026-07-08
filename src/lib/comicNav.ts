@@ -5,6 +5,11 @@ export interface Comic {
   image: string;
   body: string;
   source: string;
+  transcript: string;
+  altText: string;
+  hoverText: string;
+  tags?: string[];
+  characters?: string[];
 }
 
 export function sortByDate(comics: Comic[]): Comic[] {
