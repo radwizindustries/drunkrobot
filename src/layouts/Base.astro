@@ -126,14 +126,6 @@ const structuredDataJSON = structuredData
         try { localStorage.setItem('dr-theme', next); } catch (e) {}
       });
 
-      // For the humans who open the hood.
-      console.log(
-        '%cDRUNK ROBOT%c\n01000011 01001000 01000101 01000101 01010010 01010011\n' +
-          'Sober enough to read console output? The maintenance hatch is at /terminal/',
-        'font-family: Impact, sans-serif; font-size: 24px; color: #e5273e;',
-        'font-family: monospace; color: #f5a623;'
-      );
-
       // Typing b-o-o-p anywhere opens the maintenance terminal.
       // (A true Konami code would fight the arrow-key comic navigation.)
       (function () {
@@ -146,6 +138,9 @@ const structuredDataJSON = structuredData
           if (buffer === 'boop') window.location.href = '/terminal/';
         });
       })();
+    </script>
+    <script>
+      import '../scripts/site-eggs.ts';
     </script>
   </body>
 </html>
