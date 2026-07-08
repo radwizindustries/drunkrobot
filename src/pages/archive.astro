@@ -86,13 +86,15 @@ const years = [...byYear.keys()].sort().reverse(); // newest year first
   .grid a { text-decoration: none; color: var(--text); display: block; }
   .thumb {
     display: block;
-    border: 2px solid var(--ink);
+    position: relative;
+    z-index: 10; /* keep CRT scanlines off the strip art */
+    border: 1px solid var(--edge);
     background: #fff;
-    box-shadow: 4px 4px 0 var(--red);
+    box-shadow: 4px 4px 0 var(--amber);
     aspect-ratio: 4 / 3;
     overflow: hidden;
   }
-  .thumb img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
+  .thumb img { width: 100%; height: 100%; object-fit: contain; display: block; }
   .grid a:hover .thumb { box-shadow: 4px 4px 0 var(--amber); }
   .t { display: block; margin-top: 0.6rem; font-size: 0.9rem; color: var(--ink); }
   time { color: var(--muted); font-size: 0.72rem; }

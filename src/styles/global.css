@@ -136,3 +136,22 @@ details.transcript summary::-webkit-details-marker{ display:none; }
 details.transcript .tbody{ padding:0 12px 12px; color:var(--green-dim); white-space:pre-line; }
 
 .visually-hidden{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
+
+/* ---- Compatibility layer: v2 markup still uses these class/var names.
+   Alias them onto Phosphor tokens so reader/archive/about/404 render in-theme
+   without rewriting each page's markup. ---- */
+:root{
+  --muted:var(--mute); --hairline:var(--edge); --amber-text:var(--amber);
+  --text:var(--green); --surface:var(--panel); --red:var(--amber);
+}
+.btn-panel{ display:inline-block; border:2px solid var(--green); color:var(--green);
+  background:transparent; font-family:var(--font-body); font-size:18px; letter-spacing:.3px;
+  padding:6px 14px; border-radius:4px; cursor:pointer; text-align:center; text-decoration:none; }
+.btn-panel:hover{ background:var(--green); color:var(--bg); text-shadow:none; }
+.btn-panel.primary{ border-color:var(--amber); color:var(--amber); }
+.btn-panel.primary:hover{ background:var(--amber); color:var(--bg); }
+.btn-panel.disabled,.btn-panel[aria-disabled='true']{ opacity:.35; cursor:default; }
+.btn-panel.disabled:hover,.btn-panel[aria-disabled='true']:hover{ background:transparent; color:var(--green); }
+/* Comic reader frame: strip art always on white, unfiltered. */
+.frame{ position:relative; z-index:10; }
+.frame img{ display:block; width:100%; height:auto; background:#fff; border-radius:4px; }
