@@ -125,6 +125,27 @@ const structuredDataJSON = structuredData
         document.documentElement.dataset.theme = next;
         try { localStorage.setItem('dr-theme', next); } catch (e) {}
       });
+
+      // For the humans who open the hood.
+      console.log(
+        '%cDRUNK ROBOT%c\n01000011 01001000 01000101 01000101 01010010 01010011\n' +
+          'Sober enough to read console output? The maintenance hatch is at /terminal/',
+        'font-family: Impact, sans-serif; font-size: 24px; color: #e5273e;',
+        'font-family: monospace; color: #f5a623;'
+      );
+
+      // Typing b-o-o-p anywhere opens the maintenance terminal.
+      // (A true Konami code would fight the arrow-key comic navigation.)
+      (function () {
+        var buffer = '';
+        document.addEventListener('keydown', function (e) {
+          var t = e.target;
+          if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+          if (e.key.length !== 1) return;
+          buffer = (buffer + e.key.toLowerCase()).slice(-4);
+          if (buffer === 'boop') window.location.href = '/terminal/';
+        });
+      })();
     </script>
   </body>
 </html>
