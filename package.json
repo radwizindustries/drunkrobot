@@ -10,6 +10,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@astrojs/rss": "^4.0.19",
     "@fontsource/anton": "^5.1.0",
     "astro": "^5.0.0"
   },
