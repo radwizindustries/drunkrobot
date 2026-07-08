@@ -12,7 +12,9 @@ again. Live at <https://drunk-robot.com>.
 
 ## Stack
 
-- [Astro 5](https://astro.build), fully static output (no SSR, no backend)
+- [Astro 7](https://astro.build), fully static output (no SSR, no backend);
+  `compressHTML: true` is pinned in `astro.config.mjs` because Astro 7's
+  JSX-style default strips the deliberate spaces around inline elements
 - [Pagefind](https://pagefind.app) for build-time full-text search
 - [@astrojs/rss](https://docs.astro.build/en/recipes/rss/) for the feed
 - Vitest for unit tests
@@ -177,6 +179,6 @@ The v2.0.0 release changed nginx.conf twice: CSP `script-src` gained
 ## Roadmap (non-goals for now)
 
 New strips resume publishing; remaining plan items: responsive AVIF/WebP
-images via the Astro image pipeline, tag/character hub pages, Astro 7
-upgrade (clears npm audit advisories against Astro 5). Deliberately out of
-scope: comments, newsletter, accounts, merch, webtoon vertical format.
+images via the Astro image pipeline, tag/character hub pages. Deliberately
+out of scope: comments, newsletter, accounts, merch, webtoon vertical
+format.
