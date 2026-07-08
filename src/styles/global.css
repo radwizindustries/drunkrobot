@@ -54,7 +54,7 @@ p{ max-width:64ch; }
 :root[data-theme='light'] .crt-overlay{ box-shadow:inset 0 0 120px rgba(0,0,0,.12); }
 
 /* ---- Global chrome (header / footer from Base.astro) ---- */
-.site-header{ position:sticky; top:0; z-index:8; background:var(--bg);
+.site-header{ position:sticky; top:0; z-index:20; background:var(--bg);
   border-bottom:1px solid var(--edge); }
 .site-header .wrap{ display:flex; align-items:center; justify-content:space-between; gap:12px;
   padding-top:12px; padding-bottom:12px; }
@@ -74,8 +74,10 @@ p{ max-width:64ch; }
 .readout{ font-family:var(--font-pix); font-size:9px; color:var(--green-dim); letter-spacing:.5px; }
 .lit{ color:var(--amber); }
 
-/* CRT "screen" — holds the comic and other framed content */
-.screen{ position:relative; border:2px solid var(--edge); border-radius:8px;
+/* CRT "screen" — holds the comic and other framed content.
+   Lifted above the fixed .crt-overlay (z-index:9) so scanlines never fall
+   on the strip art; the header (z-index:20) still covers it when scrolling. */
+.screen{ position:relative; z-index:10; border:2px solid var(--edge); border-radius:8px;
   background:var(--panel); box-shadow:inset 0 0 40px rgba(57,255,136,.12);
   padding:16px; margin:22px 0; }
 .screen>.marquee{ position:absolute; top:-13px; left:50%; transform:translateX(-50%);
