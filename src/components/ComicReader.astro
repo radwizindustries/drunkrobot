@@ -5,45 +5,137 @@ interface Props {
   comic: Comic;
   nav: ComicNav;
   allSlugs: string[];
+  /** True on the strip's own /comic/ page; false when the homepage mirrors
+      the latest strip. Controls reading-position recording (a mid-archive
+      position must survive a front-page visit) and Pagefind indexing (the
+      homepage copy would be a duplicate search result). */
+  canonical?: boolean;
 }
 
-const { comic, nav, allSlugs } = Astro.props;
+const { comic, nav, allSlugs, canonical = true } = Astro.props;
 const displayDate = new Date(comic.date + 'T00:00:00').toLocaleDateString('en-US', {
   year: 'numeric', month: 'long', day: 'numeric',
 });
+const prevURL = nav.prev ? `/comic/${nav.prev.slug}/` : null;
+const nextURL = nav.next ? `/comic/${nav.next.slug}/` : null;
 ---
 
-<article class="reader">
-  <div class="meta">
-    <span>#{String(nav.index + 1).padStart(3, '0')} of {nav.total}</span>
+<article class="reader" data-pagefind-body={canonical ? 'true' : undefined}>
+  <div class="meta readout" data-pagefind-ignore>
+    <span>Strip <span class="lit">{String(nav.index + 1).padStart(3, '0')}</span>/{String(nav.total).padStart(3, '0')}</span>
     <time datetime={comic.date}>{displayDate}</time>
   </div>
   <h1 class="display">{comic.title}</h1>
-  <div class="frame">
-    <img src={`/comics/${comic.image}`} alt={comic.title} loading="eager" />
-  </div>
-  <nav class="reader-nav" aria-label="Comic navigation">
-    {nav.prev
-      ? <a class="display" href={`/comic/${nav.first.slug}/`}>&#171; First</a>
-      : <span class="display disabled">&#171; First</span>}
-    {nav.prev
-      ? <a class="display" href={`/comic/${nav.prev.slug}/`}>&#8249; Prev</a>
-      : <span class="display disabled">&#8249; Prev</span>}
-    <button class="display" id="random-btn" type="button">Random</button>
-    {nav.next
-      ? <a class="display" href={`/comic/${nav.next.slug}/`}>Next &#8250;</a>
-      : <span class="display disabled">Next &#8250;</span>}
-    {nav.next
-      ? <a class="display" href={`/comic/${nav.last.slug}/`}>Last &#187;</a>
-      : <span class="display disabled">Last &#187;</span>}
+  <nav class="reader-nav top" aria-label="Comic navigation (top)" data-pagefind-ignore>
+    {prevURL
+      ? <a class="btn-panel display" href={prevURL} rel="prev">&#8249; Prev</a>
+      : <span class="btn-panel display disabled" aria-disabled="true">&#8249; Prev</span>}
+    {nextURL
+      ? <a class="btn-panel display" href={nextURL} rel="next">Next &#8250;</a>
+      : <span class="btn-panel display disabled" aria-disabled="true">Next &#8250;</span>}
   </nav>
+  <div class="frame">
+    <img
+      src={`/comics/${comic.image}`}
+      alt={comic.altText}
+      title={comic.hoverText}
+      loading="eager"
+      data-pagefind-meta="image[src]"
+    />
+  </div>
+  <div class="under-frame">
+    <button
+      class="joke-toggle mono"
+      id="joke-toggle"
+      type="button"
+      aria-expanded="false"
+      aria-controls="hovertext"
+      title="Reveal the hidden caption"
+    >&#183;&#183;&#183;</button>
+    <p class="hovertext readout" id="hovertext" hidden>{comic.hoverText}</p>
+  </div>
+  <nav class="reader-nav" aria-label="Comic navigation" data-pagefind-ignore>
+    {nav.prev
+      ? <a class="btn-panel display" href={`/comic/${nav.first.slug}/`}>&#171; First</a>
+      : <span class="btn-panel display disabled" aria-disabled="true">&#171; First</span>}
+    {prevURL
+      ? <a class="btn-panel display" href={prevURL} rel="prev">&#8249; Prev</a>
+      : <span class="btn-panel display disabled" aria-disabled="true">&#8249; Prev</span>}
+    <button class="btn-panel primary display" id="random-btn" type="button">Random</button>
+    {nextURL
+      ? <a class="btn-panel display" href={nextURL} rel="next">Next &#8250;</a>
+      : <span class="btn-panel display disabled" aria-disabled="true">Next &#8250;</span>}
+    {nav.next
+      ? <a class="btn-panel display" href={`/comic/${nav.last.slug}/`}>Last &#187;</a>
+      : <span class="btn-panel display disabled" aria-disabled="true">Last &#187;</span>}
+  </nav>
+  <details class="transcript">
+    <summary class="readout">Transcript</summary>
+    <h2 class="sr-only">Transcript of “{comic.title}”</h2>
+    <div class="transcript-text">{comic.transcript}</div>
+  </details>
   {comic.body && <div class="commentary" set:html={comic.body} />}
 </article>
 
-<script is:inline define:vars={{ allSlugs }}>
+<script is:inline define:vars={{ allSlugs, prevURL, nextURL, currentSlug: comic.slug, canonical }}>
+  // Remember where the reader left off (homepage offers a resume link).
+  if (canonical) {
+    try { localStorage.setItem('dr-last', currentSlug); } catch (e) {}
+  }
+
+  // Random that avoids repeats within a session.
+  const SEEN_KEY = 'dr-seen';
+  let seen = [];
+  try { seen = JSON.parse(sessionStorage.getItem(SEEN_KEY)) || []; } catch (e) {}
+  if (!seen.includes(currentSlug)) seen.push(currentSlug);
+  try { sessionStorage.setItem(SEEN_KEY, JSON.stringify(seen)); } catch (e) {}
+
   document.getElementById('random-btn').addEventListener('click', () => {
-    const slug = allSlugs[Math.floor(Math.random() * allSlugs.length)];
+    let pool = allSlugs.filter((s) => !seen.includes(s));
+    if (pool.length === 0) {
+      // Everything's been seen this session: start over, but never
+      // "randomly" land on the strip already on screen.
+      seen = [currentSlug];
+      try { sessionStorage.setItem(SEEN_KEY, JSON.stringify(seen)); } catch (e) {}
+      pool = allSlugs.filter((s) => s !== currentSlug);
+    }
+    const slug = pool[Math.floor(Math.random() * pool.length)];
     window.location.href = `/comic/${slug}/`;
+  });
+
+  // Keyboard: left/right arrows for prev/next.
+  document.addEventListener('keydown', (e) => {
+    if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) return;
+    const t = e.target;
+    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+    if (e.key === 'ArrowLeft' && prevURL) window.location.href = prevURL;
+    if (e.key === 'ArrowRight' && nextURL) window.location.href = nextURL;
+  });
+
+  // Swipe left/right on the comic for next/prev.
+  const frame = document.querySelector('.frame');
+  let touchX = null, touchY = null;
+  frame.addEventListener('touchstart', (e) => {
+    touchX = e.changedTouches[0].clientX;
+    touchY = e.changedTouches[0].clientY;
+  }, { passive: true });
+  frame.addEventListener('touchend', (e) => {
+    if (touchX === null) return;
+    const dx = e.changedTouches[0].clientX - touchX;
+    const dy = e.changedTouches[0].clientY - touchY;
+    touchX = touchY = null;
+    if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+    if (dx < 0 && nextURL) window.location.href = nextURL;
+    if (dx > 0 && prevURL) window.location.href = prevURL;
+  }, { passive: true });
+
+  // The hidden-caption reveal for readers without a hover.
+  const toggle = document.getElementById('joke-toggle');
+  const hovertext = document.getElementById('hovertext');
+  toggle.addEventListener('click', () => {
+    const open = hovertext.hidden;
+    hovertext.hidden = !open;
+    toggle.setAttribute('aria-expanded', String(open));
   });
 </script>
 
@@ -51,40 +143,79 @@ const displayDate = new Date(comic.date + 'T00:00:00').toLocaleDateString('en-US
   .meta {
     display: flex;
     justify-content: space-between;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    font-size: 0.75rem;
     margin-top: 1.5rem;
   }
-  h1 { font-size: 1.6rem; margin: 0.25rem 0 1rem; }
+  h1 { font-size: 1.6rem; margin: 0.25rem 0 0.75rem; color: var(--ink); }
   .reader-nav {
     display: flex;
     justify-content: center;
-    gap: 0.5rem;
+    gap: 0.6rem;
     margin: 1.25rem 0;
     flex-wrap: wrap;
   }
-  .reader-nav a, .reader-nav button, .reader-nav .disabled {
-    background: var(--panel);
-    color: var(--text);
-    text-decoration: none;
-    padding: 0.6rem 1.1rem;
-    font-size: 0.85rem;
-    border: none;
+  .reader-nav.top {
+    justify-content: flex-end;
+    margin: 0 0 0.75rem;
+  }
+  .reader-nav.top .btn-panel {
+    padding: 0.35rem 0.8rem;
+    min-height: 0;
+    font-size: 0.75rem;
+    border-width: 1px;
+    box-shadow: 2px 2px 0 var(--ink);
+  }
+  .under-frame {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    margin-top: 0.9rem;
+    min-height: 1.5rem;
+  }
+  .joke-toggle {
+    background: none;
+    border: 1px solid var(--hairline);
+    color: var(--muted);
+    padding: 0 0.5rem;
+    font-size: 1rem;
+    line-height: 1.3;
     cursor: pointer;
   }
-  .reader-nav a:hover, .reader-nav button:hover { background: var(--red); }
-  .reader-nav button { background: var(--red); }
-  .reader-nav .disabled { color: #555; cursor: default; }
+  .joke-toggle:hover, .joke-toggle[aria-expanded='true'] { color: var(--amber-text); border-color: var(--amber-text); }
+  .hovertext { margin: 0; text-transform: none; letter-spacing: 0.04em; }
+  .transcript {
+    margin-top: 1.5rem;
+    border: 1px solid var(--hairline);
+  }
+  .transcript summary {
+    cursor: pointer;
+    padding: 0.6rem 0.9rem;
+    user-select: none;
+  }
+  .transcript summary:hover { color: var(--amber-text); }
+  .transcript-text {
+    white-space: pre-line;
+    padding: 0 0.9rem 0.9rem;
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+  .sr-only {
+    position: absolute;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+  }
   .commentary {
     border-left: 3px solid var(--red);
     padding-left: 1rem;
     color: var(--muted);
     font-size: 0.95rem;
+    margin-top: 1.5rem;
   }
   @media (max-width: 640px) {
-    .reader-nav {
+    .reader-nav:not(.top) {
       position: fixed;
       bottom: 0;
       left: 0;
@@ -93,6 +224,12 @@ const displayDate = new Date(comic.date + 'T00:00:00').toLocaleDateString('en-US
       background: var(--bg);
       border-top: 2px solid var(--red);
       padding: 0.5rem;
+      gap: 0.4rem;
+    }
+    .reader-nav:not(.top) .btn-panel {
+      padding: 0.5rem 0.7rem;
+      font-size: 0.75rem;
+      box-shadow: none;
     }
   }
 </style>

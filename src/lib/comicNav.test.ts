@@ -2,7 +2,17 @@ import { describe, expect, it } from 'vitest';
 import { getNav, sortByDate, type Comic } from './comicNav';
 
 function comic(slug: string, date: string): Comic {
-  return { slug, title: slug.toUpperCase(), date, image: `${date}.jpg`, body: '', source: 'x' };
+  return {
+    slug,
+    title: slug.toUpperCase(),
+    date,
+    image: `${date}.jpg`,
+    body: '',
+    source: 'x',
+    transcript: 'panel 1',
+    altText: 'alt',
+    hoverText: 'hover',
+  };
 }
 
 const unsorted = [comic('c', '2011-05-30'), comic('a', '2011-05-23'), comic('b', '2011-05-26')];

@@ -3,6 +3,7 @@ import { getCollection } from 'astro:content';
 import ComicReader from '../components/ComicReader.astro';
 import Base from '../layouts/Base.astro';
 import { getNav, sortByDate } from '../lib/comicNav';
+import { SITE_DESCRIPTION } from '../lib/site';
 
 const entries = await getCollection('comics');
 const comics = sortByDate(entries.map((e) => e.data));
@@ -13,15 +14,52 @@ const allSlugs = comics.map((c) => c.slug);
 
 <Base
   title={`Drunk Robot - ${latest.title}`}
-  description="Drunk Robot, a weekly webcomic that ran 2011 to 2016. Restored from the Internet Archive."
+  description={SITE_DESCRIPTION}
   image={`/comics/${latest.image}`}
+  preloadImage={nav.prev ? `/comics/${nav.prev.image}` : undefined}
   structuredData={{
     '@context': 'https://schema.org',
     '@type': 'WebSite',
     name: 'Drunk Robot',
     url: new URL('/', Astro.site).toString(),
-    description: 'A weekly webcomic that ran 2011 to 2016, restored from the Internet Archive.',
+    description: SITE_DESCRIPTION,
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: {
+        '@type': 'EntryPoint',
+        urlTemplate: new URL('/search/?q={search_term_string}', Astro.site).toString(),
+      },
+      'query-input': 'required name=search_term_string',
+    },
   }}
 >
-  <ComicReader comic={latest} nav={nav} allSlugs={allSlugs} />
+  <p class="resume readout" id="resume" hidden>
+    &gt; <a id="resume-link" href="/">Continue where you left off</a><span class="cursor" aria-hidden="true">_</span>
+  </p>
+  <ComicReader comic={latest} nav={nav} allSlugs={allSlugs} canonical={false} />
 </Base>
+
+<script is:inline define:vars={{ latestSlug: latest.slug, allSlugs }}>
+  // Offer to resume from the last strip read, if it isn't the one on screen.
+  try {
+    const last = localStorage.getItem('dr-last');
+    if (last && last !== latestSlug && allSlugs.includes(last)) {
+      const link = document.getElementById('resume-link');
+      link.href = `/comic/${last}/`;
+      document.getElementById('resume').hidden = false;
+    }
+  } catch (e) {}
+</script>
+
+<style>
+  .resume {
+    margin: 1.25rem 0 -0.5rem;
+    color: var(--amber-text);
+  }
+  .resume a { color: var(--amber-text); }
+  .cursor { animation: blink 1.1s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) {
+    .cursor { animation: none; }
+  }
+</style>

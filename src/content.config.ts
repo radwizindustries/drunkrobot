@@ -13,6 +13,15 @@ const comics = defineCollection({
     image: z.string().min(1),
     body: z.string(),
     source: z.string().url(),
+    // Full dialogue/action text. Powers search, SEO, AEO, and accessibility;
+    // required for every strip, past and future.
+    transcript: z.string().min(1),
+    // Describes the image for screen readers. altText describes, hoverText jokes.
+    altText: z.string().min(1),
+    // The second punchline, xkcd-style, shown on hover/long-press.
+    hoverText: z.string().min(1),
+    tags: z.array(z.string()).default([]),
+    characters: z.array(z.string()).default([]),
   }),
 });
 

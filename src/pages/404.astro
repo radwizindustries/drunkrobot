@@ -1,0 +1,54 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../layouts/Base.astro';
+
+const entries = await getCollection('comics');
+const allSlugs = entries.map((e) => e.data.slug);
+---
+
+<Base title="404 – Robot Memory Corrupted | Drunk Robot" description="This page was lost, possibly to a decade offline. Try a random strip or the search.">
+  <div class="corrupt">
+    <p class="readout">FATAL EXCEPTION AT 0x0000404</p>
+    <h1 class="display glitch">Robot memory<br />corrupted</h1>
+    <pre class="readout dump" aria-hidden="true">&gt; scanning archive sectors ... 7 strips intact
+&gt; requested page .............. NOT FOUND
+&gt; probable cause .............. a decade offline, or a typo
+&gt; recommended action .......... pick a door below</pre>
+    <div class="doors">
+      <button class="btn-panel primary display" id="random-404" type="button">Random strip</button>
+      <a class="btn-panel display" href="/search/">Search</a>
+      <a class="btn-panel display" href="/archive/">Archive</a>
+      <a class="btn-panel display" href="/">Latest</a>
+    </div>
+  </div>
+</Base>
+
+<script is:inline define:vars={{ allSlugs }}>
+  document.getElementById('random-404').addEventListener('click', () => {
+    const slug = allSlugs[Math.floor(Math.random() * allSlugs.length)];
+    window.location.href = `/comic/${slug}/`;
+  });
+</script>
+
+<style>
+  .corrupt { max-width: 640px; margin-top: 2.5rem; }
+  h1 {
+    font-size: 3rem;
+    line-height: 1.05;
+    margin: 0.5rem 0 1rem;
+    color: var(--ink);
+    text-shadow: 4px 4px 0 var(--red);
+  }
+  .dump {
+    border: 1px solid var(--hairline);
+    padding: 0.9rem;
+    overflow-x: auto;
+    text-transform: none;
+  }
+  .doors {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    margin-top: 1.5rem;
+  }
+</style>

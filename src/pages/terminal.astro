@@ -1,0 +1,125 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import { sortByDate } from '../lib/comicNav';
+
+const entries = await getCollection('comics');
+const comics = sortByDate(entries.map((e) => e.data)).map((c, i) => ({
+  n: i + 1,
+  slug: c.slug,
+  title: c.title,
+  date: c.date,
+}));
+---
+
+<Base title="DR-OS Terminal | Drunk Robot" description="A maintenance terminal for a robot that has had a few.">
+  <div class="term" id="term">
+    <pre class="screen" id="screen">DR-OS v2.0.26 (reboot build)
+Maintenance terminal. This robot has had a few.
+Type 'help' for commands.
+</pre>
+    <form id="prompt-form" class="prompt">
+      <label class="lit" for="cmd">drunkrobot&gt;</label>
+      <input id="cmd" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Terminal command" />
+    </form>
+  </div>
+</Base>
+
+<script is:inline define:vars={{ comics }}>
+  const screen = document.getElementById('screen');
+  const input = document.getElementById('cmd');
+  const print = (text) => {
+    screen.textContent += text + '\n';
+    screen.scrollTop = screen.scrollHeight;
+  };
+  const go = (url, delay) => setTimeout(() => { window.location.href = url; }, delay);
+
+  const commands = {
+    help: () =>
+      'commands:\n' +
+      '  ls              list archive sectors\n' +
+      '  comic <n>       open strip number n\n' +
+      '  random          open a random strip\n' +
+      '  make me a drink request a beverage\n' +
+      '  reboot          you know what this does\n' +
+      '  whoami          identity check\n' +
+      '  clear           wipe the screen\n' +
+      '  exit            back to the comic',
+    ls: () => comics.map((c) => `strip-${String(c.n).padStart(3, '0')}  ${c.date}  ${c.title}`).join('\n'),
+    random: () => {
+      const c = comics[Math.floor(Math.random() * comics.length)];
+      go(`/comic/${c.slug}/`, 400);
+      return `loading strip-${String(c.n).padStart(3, '0')}...`;
+    },
+    'make me a drink': () => 'ERROR: I only pour for robots. Nice try, meatbag.',
+    'sudo make me a drink': () => 'sudo detected. 01001111 01001011.\nOne motor oil martini, extra bolts. Coming up.',
+    reboot: () => {
+      go('/comic/reboot/', 1600);
+      return 'rebooting...\nwait. rebooting a reboot?\nwe have hit the rebooting singularity.';
+    },
+    whoami: () => 'a human. probably. blink twice if sober.',
+    clear: () => { screen.textContent = ''; return null; },
+    exit: () => { go('/', 300); return 'bye.'; },
+  };
+
+  document.getElementById('prompt-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const raw = input.value.trim();
+    input.value = '';
+    if (!raw) return;
+    print(`drunkrobot> ${raw}`);
+    const lower = raw.toLowerCase();
+    const comicMatch = lower.match(/^(?:comic|strip)\s+(\d+)$/);
+    let out;
+    if (commands[lower]) {
+      out = commands[lower]();
+    } else if (comicMatch) {
+      const c = comics.find((x) => x.n === Number(comicMatch[1]));
+      if (c) {
+        go(`/comic/${c.slug}/`, 400);
+        out = `loading "${c.title}"...`;
+      } else {
+        out = `ERROR: no strip ${comicMatch[1]}. try 'ls'.`;
+      }
+    } else {
+      out = `ERROR: '${raw}' not found. try 'help'. or a drink.`;
+    }
+    if (out) print(out);
+  });
+
+  input.focus();
+</script>
+
+<style>
+  .term {
+    margin-top: 2rem;
+    border: 2px solid var(--ink);
+    box-shadow: 6px 6px 0 var(--red);
+    background: #0a0d11;
+    padding: 1rem;
+    font-family: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.85rem;
+  }
+  .screen {
+    margin: 0 0 0.75rem;
+    white-space: pre-wrap;
+    color: #f5a623;
+    max-height: 50vh;
+    overflow-y: auto;
+  }
+  .prompt {
+    display: flex;
+    gap: 0.5rem;
+    align-items: baseline;
+  }
+  .prompt label { color: #e5273e; }
+  .prompt input {
+    flex: 1;
+    background: none;
+    border: none;
+    color: #f5a623;
+    font: inherit;
+    caret-color: #f5a623;
+  }
+  .prompt input:focus { outline: none; }
+</style>
