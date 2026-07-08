@@ -18,10 +18,11 @@ const allSlugs = comics.map((c) => c.slug);
 ---
 
 <Base
-  title={`Drunk Robot - ${comic.title}`}
-  description={`"${comic.title}" - a Drunk Robot strip from ${comic.date}.`}
+  title={`#${String(nav.index + 1).padStart(3, '0')} – ${comic.title} | Drunk Robot`}
+  description={comic.transcript.split('\n')[0]}
   image={`/comics/${comic.image}`}
   type="article"
+  preloadImage={nav.next ? `/comics/${nav.next.image}` : undefined}
   structuredData={{
     '@context': 'https://schema.org',
     '@type': 'CreativeWork',

@@ -10,6 +10,8 @@ interface Props {
   type?: 'website' | 'article';
   /** Optional JSON-LD structured data object, rendered as a single <script type="application/ld+json">. */
   structuredData?: Record<string, unknown>;
+  /** Site-relative image URL to preload (the next strip a reader will likely open). */
+  preloadImage?: string;
 }
 
 const {
@@ -18,6 +20,7 @@ const {
   image,
   type = 'website',
   structuredData,
+  preloadImage,
 } = Astro.props;
 const path = Astro.url.pathname;
 const canonicalURL = new URL(path, Astro.site);
@@ -36,6 +39,20 @@ const structuredDataJSON = structuredData
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
+    <script is:inline>
+      // Theme before first paint: stored choice wins, else OS preference,
+      // else dark ("lights off" is the house default).
+      (function () {
+        var stored;
+        try { stored = localStorage.getItem('dr-theme'); } catch (e) {}
+        var theme = stored === 'light' || stored === 'dark'
+          ? stored
+          : (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+        document.documentElement.dataset.theme = theme;
+      })();
+    </script>
+    <link rel="alternate" type="application/rss+xml" title="Drunk Robot" href="/rss.xml" />
+    {preloadImage && <link rel="preload" as="image" href={preloadImage} />}
     <link rel="icon" href="/favicon.ico" sizes="32x32" />
     <link rel="canonical" href={canonicalURL} />
     <title>{title}</title>
@@ -73,7 +90,11 @@ const structuredDataJSON = structuredData
         <a class="logo display" href="/">DRUNK<em>ROBOT</em></a>
         <nav class="site-nav">
           <a href="/archive/" aria-current={path.startsWith('/archive') ? 'page' : undefined}>Archive</a>
+          <a href="/search/" aria-current={path.startsWith('/search') ? 'page' : undefined}>Search</a>
           <a href="/about/" aria-current={path.startsWith('/about') ? 'page' : undefined}>About</a>
+          <button class="theme-toggle mono" id="theme-toggle" type="button" aria-label="Toggle color theme">
+            Lights
+          </button>
         </nav>
       </div>
     </header>
@@ -82,8 +103,28 @@ const structuredDataJSON = structuredData
     </main>
     <footer class="site-footer">
       <div class="wrap">
-        Drunk Robot ran weekly from 2011 to 2016. Restored from the Internet Archive in 2026.
+        <div class="links">
+          <a href="/archive/">Archive</a>
+          <a href="/search/">Search</a>
+          <a href="/about/">About</a>
+          <a href="/rss.xml">RSS</a>
+        </div>
+        <p class="readout">
+          DRUNK-ROBOT.COM · EST 2011 · <span class="lit">REBOOTED 2026</span>
+        </p>
+        <p>
+          Drunk Robot ran weekly from 2011 to 2016, was restored from the
+          Internet Archive, and publishes again. &copy; 2011&ndash;2026 Brian
+          Powell &amp; Jeff Pina.
+        </p>
       </div>
     </footer>
+    <script is:inline>
+      document.getElementById('theme-toggle').addEventListener('click', function () {
+        var next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+        document.documentElement.dataset.theme = next;
+        try { localStorage.setItem('dr-theme', next); } catch (e) {}
+      });
+    </script>
   </body>
 </html>

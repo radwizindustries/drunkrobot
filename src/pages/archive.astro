@@ -4,45 +4,74 @@ import Base from '../layouts/Base.astro';
 import { sortByDate } from '../lib/comicNav';
 
 const entries = await getCollection('comics');
-const comics = sortByDate(entries.map((e) => e.data)).reverse(); // newest first
+const comics = sortByDate(entries.map((e) => e.data));
+
+const byYear = new Map<string, typeof comics>();
+for (const c of comics) {
+  const year = c.date.slice(0, 4);
+  if (!byYear.has(year)) byYear.set(year, []);
+  byYear.get(year)!.push(c);
+}
+const years = [...byYear.keys()].sort().reverse(); // newest year first
 ---
 
 <Base title="Drunk Robot - Archive">
   <h1 class="display">The Complete Archive</h1>
-  <p class="count">{comics.length} strips, 2011 to 2016</p>
-  <ul class="grid">
-    {comics.map((c) => (
-      <li>
-        <a href={`/comic/${c.slug}/`}>
-          <span class="thumb"><img src={`/comics/${c.image}`} alt={c.title} loading="lazy" /></span>
-          <span class="display t">{c.title}</span>
-          <time datetime={c.date}>{c.date}</time>
-        </a>
-      </li>
-    ))}
-  </ul>
+  <p class="readout">{comics.length} strips recovered · 2011 to 2016</p>
+  {years.map((year) => (
+    <section aria-labelledby={`year-${year}`}>
+      <h2 class="display year" id={`year-${year}`}>
+        {year} <span class="readout">{byYear.get(year)!.length} {byYear.get(year)!.length === 1 ? 'strip' : 'strips'}</span>
+      </h2>
+      <ul class="grid">
+        {byYear.get(year)!.map((c) => (
+          <li>
+            <a href={`/comic/${c.slug}/`}>
+              <span class="thumb"><img src={`/comics/${c.image}`} alt={c.altText} loading="lazy" /></span>
+              <span class="display t">{c.title}</span>
+              <time class="mono" datetime={c.date}>{c.date}</time>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
+  ))}
 </Base>
 
 <style>
-  h1 { margin: 1.5rem 0 0.25rem; font-size: 1.8rem; }
-  .count { color: var(--muted); margin: 0 0 1.5rem; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.1em; }
+  h1 { margin: 1.5rem 0 0.25rem; font-size: 1.8rem; color: var(--ink); }
+  .year {
+    font-size: 1.2rem;
+    color: var(--ink);
+    border-bottom: 1px solid var(--hairline);
+    padding-bottom: 0.4rem;
+    margin: 2rem 0 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
   .grid {
     list-style: none;
     padding: 0;
+    margin: 0;
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 1.25rem;
+    gap: 1.5rem;
   }
   .grid a { text-decoration: none; color: var(--text); display: block; }
   .thumb {
     display: block;
-    border: 3px solid var(--red);
-    background: #000;
+    border: 2px solid var(--ink);
+    background: #fff;
+    box-shadow: 4px 4px 0 var(--red);
     aspect-ratio: 4 / 3;
     overflow: hidden;
   }
   .thumb img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
-  .grid a:hover .thumb { border-color: var(--text); }
-  .t { display: block; margin-top: 0.5rem; font-size: 0.9rem; }
-  time { color: var(--muted); font-size: 0.75rem; }
+  .grid a:hover .thumb { box-shadow: 4px 4px 0 var(--amber); }
+  .t { display: block; margin-top: 0.6rem; font-size: 0.9rem; color: var(--ink); }
+  time { color: var(--muted); font-size: 0.72rem; }
+  @media (max-width: 400px) {
+    .grid { grid-template-columns: 1fr 1fr; gap: 1rem; }
+  }
 </style>

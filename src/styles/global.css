@@ -1,11 +1,56 @@
 @import '@fontsource/anton';
 
+/* ---------------------------------------------------------------------------
+   Misprint design system.
+   The chrome borrows the strips' own print language: paper-white ink strokes,
+   hard offset shadows like an off-register print run, and monospace robot
+   readouts. Red is the brand (the strips' own watermark); amber is the
+   robot-LED/last-call accent. Dark ("lights off") is the default theme.
+--------------------------------------------------------------------------- */
+
 :root {
-  --bg: #111;
-  --panel: #1c1c1c;
-  --red: #e0263f;
-  --text: #f2f2f2;
-  --muted: #999;
+  --bg: #10141a;
+  --surface: #1b222b;
+  --ink: #f4f2ec;
+  --text: #e8e6df;
+  --muted: #98a1ae;
+  --red: #e5273e;
+  --link: #ff5f70;
+  --amber: #f5a623;
+  --amber-text: #f5a623;
+  --focus: #f5a623;
+  --hairline: #2a3340;
+}
+
+/* No-JS fallback: honor the OS preference. */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) {
+    --bg: #f7f5ef;
+    --surface: #ffffff;
+    --ink: #16181c;
+    --text: #23262c;
+    --muted: #5b6470;
+    --red: #c9182e;
+    --link: #b3122a;
+    --amber: #f5a623;
+    --amber-text: #8a5a00;
+    --focus: #b06f00;
+    --hairline: #ddd8cb;
+  }
+}
+
+:root[data-theme='light'] {
+  --bg: #f7f5ef;
+  --surface: #ffffff;
+  --ink: #16181c;
+  --text: #23262c;
+  --muted: #5b6470;
+  --red: #c9182e;
+  --link: #b3122a;
+  --amber: #f5a623;
+  --amber-text: #8a5a00;
+  --focus: #b06f00;
+  --hairline: #ddd8cb;
 }
 
 * { box-sizing: border-box; }
@@ -26,9 +71,21 @@ body { margin: 0; min-height: 100vh; }
   font-weight: 400;
 }
 
-a { color: var(--red); }
+.mono {
+  font-family: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
+  letter-spacing: 0.06em;
+}
+
+a { color: var(--link); }
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
 
 .wrap { max-width: 960px; margin: 0 auto; padding: 0 1rem; }
+
+/* --- header ------------------------------------------------------------- */
 
 .site-header {
   border-bottom: 4px solid var(--red);
@@ -37,7 +94,7 @@ a { color: var(--red); }
 
 .site-header .wrap {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 1rem;
   flex-wrap: wrap;
@@ -45,11 +102,19 @@ a { color: var(--red); }
 
 .logo {
   font-size: 1.75rem;
-  color: var(--text);
+  color: var(--ink);
   text-decoration: none;
+  /* The signature misprint: brand red offset like an off-register print. */
+  text-shadow: 3px 3px 0 var(--red);
 }
 
-.logo em { color: var(--red); font-style: normal; }
+.logo em { font-style: normal; }
+
+.site-nav {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
 
 .site-nav a {
   color: var(--muted);
@@ -57,22 +122,124 @@ a { color: var(--red); }
   text-transform: uppercase;
   letter-spacing: 0.1em;
   font-size: 0.8rem;
-  margin-left: 1.25rem;
 }
 
-.site-nav a:hover, .site-nav a[aria-current='page'] { color: var(--red); }
+.site-nav a:hover, .site-nav a[aria-current='page'] { color: var(--link); }
+
+.theme-toggle {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  background: none;
+  border: 1px solid var(--hairline);
+  color: var(--muted);
+  padding: 0.35rem 0.6rem;
+  cursor: pointer;
+}
+
+.theme-toggle:hover { color: var(--amber-text); border-color: var(--amber-text); }
+
+/* --- comic frame ---------------------------------------------------------
+   A comic panel: heavy ink stroke, red misprint offset. The art inside is
+   never filtered or dimmed by the theme. */
 
 .frame {
-  border: 6px solid var(--red);
-  background: #000;
+  border: 3px solid var(--ink);
+  background: #fff;
+  box-shadow: 8px 8px 0 var(--red);
+  /* Hug the art: the ink border belongs to the strip, not the page column. */
+  width: fit-content;
+  max-width: 100%;
+  margin-inline: auto;
 }
 
-.frame img { display: block; width: 100%; height: auto; }
+.frame img {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  /* Keep the strip above the fold on desktop; on phones the width limit
+     binds first, so panel text stays as large as the screen allows. */
+  max-height: 72vh;
+  margin: 0 auto;
+}
+
+/* --- panel buttons -------------------------------------------------------
+   Nav buttons shaped like little comic panels; they "press" on hover. */
+
+.btn-panel {
+  display: inline-block;
+  background: var(--surface);
+  color: var(--ink);
+  text-decoration: none;
+  border: 2px solid var(--ink);
+  box-shadow: 3px 3px 0 var(--ink);
+  padding: 0.6rem 1.1rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  min-height: 44px;
+}
+
+.btn-panel:hover {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--ink);
+  color: var(--amber-text);
+}
+
+.btn-panel.primary {
+  background: var(--red);
+  color: #fff;
+}
+
+.btn-panel.primary:hover { color: #fff; }
+
+.btn-panel[aria-disabled='true'], .btn-panel.disabled {
+  color: var(--muted);
+  border-color: var(--hairline);
+  box-shadow: 3px 3px 0 var(--hairline);
+  cursor: default;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-panel:hover { transform: none; }
+}
+
+/* --- readout -------------------------------------------------------------
+   Robot HUD lines: monospace, quiet, uppercase. */
+
+.readout {
+  font-family: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.readout .lit { color: var(--amber-text); }
+
+/* --- footer -------------------------------------------------------------- */
 
 .site-footer {
-  border-top: 1px solid #2a2a2a;
+  border-top: 1px solid var(--hairline);
   margin-top: 3rem;
   padding: 1.5rem 0 5rem;
   color: var(--muted);
   font-size: 0.8rem;
 }
+
+.site-footer .links {
+  display: flex;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+}
+
+.site-footer .links a {
+  color: var(--muted);
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 0.72rem;
+}
+
+.site-footer .links a:hover { color: var(--link); }
