@@ -1,6 +1,7 @@
 ---
 import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
+import AdSlot from '../components/AdSlot.astro';
 import { getNav, sortByDate } from '../lib/comicNav';
 import { SITE_DESCRIPTION } from '../lib/site';
 
@@ -51,6 +52,8 @@ const number = String(nav.index + 1).padStart(3, '0');
 
   <p>{latest.body}</p>
 
+  <AdSlot slot="home-below-strip" />
+
   <div class="authors">
     <div class="auth"><div class="k">Writer</div><div class="v glow">Brian Powell</div></div>
     <div class="auth"><div class="k">Artist</div><div class="v glow">Jeff Pina</div></div>
@@ -74,6 +77,8 @@ const number = String(nav.index + 1).padStart(3, '0');
     <a class="menu-row" href="/about/"><span><b>&gt; ABOUT</b> — who broke this robot</span><span class="arw">▸</span></a>
     <a class="menu-row" href="/rss.xml"><span><b>&gt; RSS</b> — subscribe</span><span class="arw">▸</span></a>
   </nav>
+
+  <AdSlot slot="home-above-footer" />
 
   <script>
     import '../scripts/stagger-boot.ts';

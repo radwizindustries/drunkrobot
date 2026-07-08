@@ -1,5 +1,6 @@
 ---
 import { getCollection } from 'astro:content';
+import AdSlot from '../../components/AdSlot.astro';
 import ComicReader from '../../components/ComicReader.astro';
 import Base from '../../layouts/Base.astro';
 import { getNav, sortByDate } from '../../lib/comicNav';
@@ -69,4 +70,5 @@ const description = comic.transcript
   }}
 >
   <ComicReader comic={comic} nav={nav} allSlugs={allSlugs} />
+  <AdSlot slot="comic-below-strip" />
 </Base>
